@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Estudi Stop-Motion d'Aula v3.1 · Captura 1080p i Exportació MP4 HQ</title>
+  <title>Estudi Stop-Motion d'Aula v3.2 · Disseny d'Estudi 1080p</title>
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Google Fonts -->
@@ -28,22 +28,26 @@
     body {
       background-color: #090d16;
       color: #f1f5f9;
-      overflow-x: hidden;
+      overflow: hidden;
       user-select: none;
     }
-    .timeline-scroll::-webkit-scrollbar {
-      height: 10px;
+    .timeline-scroll::-webkit-scrollbar,
+    .dock-scroll::-webkit-scrollbar {
+      height: 8px;
+      width: 6px;
     }
-    .timeline-scroll::-webkit-scrollbar-track {
+    .timeline-scroll::-webkit-scrollbar-track,
+    .dock-scroll::-webkit-scrollbar-track {
       background: #0f172a;
       border-radius: 6px;
     }
-    .timeline-scroll::-webkit-scrollbar-thumb {
+    .timeline-scroll::-webkit-scrollbar-thumb,
+    .dock-scroll::-webkit-scrollbar-thumb {
       background: #334155;
       border-radius: 6px;
-      border: 2px solid #0f172a;
     }
-    .timeline-scroll::-webkit-scrollbar-thumb:hover {
+    .timeline-scroll::-webkit-scrollbar-thumb:hover,
+    .dock-scroll::-webkit-scrollbar-thumb:hover {
       background: #475569;
     }
     @keyframes shutterFlash {
@@ -55,19 +59,19 @@
     }
     .kbd-badge {
       display: inline-block;
-      padding: 0.1rem 0.45rem;
+      padding: 0.1rem 0.4rem;
       font-family: 'JetBrains Mono', monospace;
-      font-size: 0.72rem;
+      font-size: 0.68rem;
       font-weight: 700;
       background: #1e293b;
       color: #cbd5e1;
       border: 1px solid #475569;
       border-bottom-width: 2px;
-      border-radius: 0.375rem;
+      border-radius: 0.35rem;
     }
   </style>
 </head>
-<body class="h-screen flex flex-col justify-between bg-slate-950 text-slate-100">
+<body class="h-screen w-screen flex flex-col justify-between bg-slate-950 text-slate-100 overflow-hidden">
 
   <!-- NOTIFICACIÓ FLOTANT (TOAST) -->
   <div id="toast" class="fixed bottom-5 right-5 z-50 hidden bg-slate-900 border border-slate-700 text-white px-4 py-3 rounded-xl shadow-2xl flex items-center gap-3 text-sm font-medium transition-all">
@@ -76,108 +80,56 @@
   </div>
 
   <!-- ==========================================
-       1. BARRA SUPERIOR (CONFIGURACIÓ DE CÀMERA, PROJECTE I EXPORTACIÓ)
+       1. BARRA SUPERIOR ULTRA-NETA (1 SOLA FILA SEMPRE)
        ========================================== -->
-  <header class="bg-slate-900/95 border-b border-slate-800 px-3 sm:px-5 py-2 flex flex-wrap items-center justify-between gap-2.5 shrink-0 z-30">
+  <header class="bg-slate-900/95 border-b border-slate-800 px-4 py-2 flex items-center justify-between gap-4 shrink-0 z-30 h-14">
     
-    <!-- Logo i Estat d'Auto-desat + Mesurador de Capacitat -->
-    <div class="flex items-center gap-2.5">
-      <div class="w-9 h-9 rounded-xl bg-amber-500 text-slate-950 flex items-center justify-center font-bold text-lg shadow">
+    <!-- Esquerra: Logo, Títol, Subtítol i Auto-desat -->
+    <div class="flex items-center gap-3 min-w-0">
+      <div class="w-9 h-9 rounded-xl bg-amber-500 text-slate-950 flex items-center justify-center font-bold text-lg shadow shrink-0">
         🎬
       </div>
-      <div>
+      <div class="min-w-0">
         <div class="flex items-center gap-2">
-          <h1 class="font-display font-bold text-base sm:text-lg tracking-tight text-white">Estudi Stop-Motion <span class="text-amber-400">v3.1</span></h1>
-          <button onclick="toggleStorageModal(true)" id="db-status-badge" class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/30 transition cursor-pointer" title="Clica per veure l'estat de la memòria, límit de fotos i còpia de seguretat">
+          <h1 class="font-display font-bold text-base tracking-tight text-white truncate">
+            Estudi Stop-Motion <span class="text-amber-400">v3.2</span>
+          </h1>
+          <button onclick="toggleStorageModal(true)" id="db-status-badge" class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/30 transition cursor-pointer shrink-0" title="Clica per veure l'estat de la memòria i còpia de seguretat">
             <span>💾 Auto-desat</span>
             <span id="capacity-top-pill" class="font-mono text-[10px] bg-slate-950/80 px-1.5 py-0.2 rounded text-emerald-300">0/1500</span>
           </button>
         </div>
-        <p class="text-[11px] text-slate-400 hidden sm:block">Serveis Territorals d'Educació a Lleida - Àrea de Cultura Digital</p>
+        <p class="text-[11px] text-slate-400 truncate">Serveis Territorials d'Educació a Lleida · Àrea de Cultura Digital</p>
       </div>
     </div>
 
-    <!-- Selector de Càmera i Eines d'Escenari -->
-    <div class="flex flex-wrap items-center gap-1.5">
-      <div class="flex items-center bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-1.5 gap-1.5">
-        <span class="text-amber-400 text-xs">📷</span>
-        <select id="camera-select" onchange="handleCameraChange()" class="bg-transparent text-xs font-medium text-slate-200 focus:outline-none max-w-[155px] sm:max-w-[200px] truncate cursor-pointer">
-          <option value="loading" class="bg-slate-900">Cercant càmeres USB...</option>
-        </select>
-        <button onclick="refreshCameraList(false)" class="text-slate-400 hover:text-white px-1 transition text-xs" title="Refrescar la llista de càmeres connectades">
-          ↻
-        </button>
-      </div>
-
-      <!-- Insígnia de Resolució Real -->
-      <span id="resolution-badge" class="hidden xl:inline-block px-2.5 py-1.5 rounded-xl bg-slate-800 border border-slate-700 font-mono text-xs text-amber-300 font-semibold" title="Resolució de captura activa">
-        1920x1080
-      </span>
-
-      <!-- Girar 180° (Pla Zenital) -->
-      <button onclick="toggleFlip180()" id="btn-flip-180" class="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-semibold text-slate-300 transition flex items-center gap-1" title="Girar la imatge 180° (ideal quan el trípode apunta cap avall en pla zenital)">
-        <span>🔄 180°</span>
+    <!-- Centre: Gestió de Fitxer de Projecte -->
+    <div class="flex items-center bg-slate-950 border border-slate-800 rounded-xl p-1 gap-1 shrink-0">
+      <button onclick="exportProjectFile()" class="px-3 py-1.5 rounded-lg hover:bg-slate-800 text-slate-200 font-semibold text-xs transition flex items-center gap-1.5" title="Desar el projecte sencer (.stopmotion.zip) per guardar-lo al Drive o USB">
+        <span>💾</span> <span>Desar Projecte</span>
       </button>
-
-      <!-- Mirall Horitzontal -->
-      <button onclick="toggleMirror()" id="btn-mirror" class="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-semibold text-slate-300 transition flex items-center gap-1" title="Invertir horitzontalment (Efecte mirall)">
-        <span>↔️ Mirall</span>
-      </button>
-
-      <!-- Croma en Viu -->
-      <button onclick="toggleChromaPanel()" id="btn-chroma-top" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-semibold text-emerald-400 transition flex items-center gap-1.5" title="Activar i configurar Croma en Viu (Tela verda)">
-        <span>🟩 Croma</span>
-      </button>
-
-      <!-- Generador de Títols i Crèdits -->
-      <button onclick="openTitleCardModal()" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-semibold text-amber-300 transition flex items-center gap-1.5" title="Crear una pàgina de Títol o Crèdits Finals en 1 sola targeta">
-        <span>🔤 Títols</span>
+      <label class="px-3 py-1.5 rounded-lg hover:bg-slate-800 text-slate-200 font-semibold text-xs transition flex items-center gap-1.5 cursor-pointer" title="Obrir un fitxer de projecte (.stopmotion.zip) desat anteriorment">
+        <span>📂</span> <span>Obrir Projecte</span>
+        <input type="file" id="import-project-input" accept=".zip" onchange="importProjectFile(event)" class="hidden">
+      </label>
+      <div class="h-4 w-px bg-slate-800 mx-0.5"></div>
+      <button onclick="openConfirmClearModal()" class="px-2.5 py-1.5 rounded-lg hover:bg-rose-950 text-slate-400 hover:text-rose-300 text-xs font-semibold transition flex items-center gap-1" title="Buidar i començar un projecte nou">
+        <span>🗑️</span> <span class="hidden md:inline">Buidar</span>
       </button>
     </div>
 
-    <!-- Botons de Projecte (Desar/Obrir), Qualitat Foto + Vídeo, Pantalla Completa i Ajuda -->
-    <div class="flex flex-wrap items-center gap-1.5">
-      <div class="flex items-center bg-slate-950 border border-slate-700 rounded-xl p-0.5 gap-0.5">
-        <button onclick="exportProjectFile()" class="px-2.5 py-1.5 rounded-lg hover:bg-slate-800 text-slate-200 font-semibold text-xs transition flex items-center gap-1" title="Desar el projecte sencer en un fitxer per guardar-lo al Drive o USB i continuar en un altre ordinador">
-          <span>💾</span> <span class="hidden lg:inline">Desar</span>
-        </button>
-        <label class="px-2.5 py-1.5 rounded-lg hover:bg-slate-800 text-slate-200 font-semibold text-xs transition flex items-center gap-1 cursor-pointer" title="Obrir un fitxer de projecte (.stopmotion.zip) desat anteriorment">
-          <span>📂</span> <span class="hidden lg:inline">Obrir</span>
-          <input type="file" id="import-project-input" accept=".zip" onchange="importProjectFile(event)" class="hidden">
-        </label>
-      </div>
-
-      <!-- Selector de Qualitat de Captura de Fotos (Ajusta automàticament el màxim de fotos recomanat) -->
-      <div class="flex items-center bg-slate-950 border border-slate-700 rounded-xl px-2 py-1 gap-1" title="Qualitat de compressió de les fotografies capturades (ajusta automàticament el límit recomanat de fotos)">
-        <span class="text-[11px] text-slate-400 hidden xl:inline">Foto:</span>
-        <select id="photo-quality-select" onchange="changePhotoQuality(this.value)" class="bg-transparent text-[11px] font-bold text-emerald-300 focus:outline-none cursor-pointer">
-          <option value="jpg92" selected class="bg-slate-900 text-slate-100">JPG 92% (Màx 1500)</option>
-          <option value="jpg98" class="bg-slate-900 text-amber-300">JPG 98% HQ (Màx 800)</option>
-          <option value="png100" class="bg-slate-900 text-purple-300">PNG 100% (Màx 350)</option>
-        </select>
-      </div>
-
-      <!-- Grup Exportació MP4 amb Selector de Qualitat (Estàndard 8 Mbps vs HQ 20 Mbps) -->
-      <div class="flex items-center bg-amber-500 rounded-xl p-0.5 shadow">
-        <select id="video-quality-select" class="bg-slate-950/90 text-amber-300 text-[11px] font-bold px-2 py-1.5 rounded-l-lg focus:outline-none cursor-pointer border-r border-amber-500/40" title="Tria la qualitat i compressió del vídeo MP4 resultant">
-          <option value="20000000" selected>Vídeo HQ · 20 Mbps</option>
-          <option value="8000000">Vídeo Std · 8 Mbps</option>
-        </select>
-        <button onclick="exportVideoMP4()" id="btn-export-mp4" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs px-2.5 py-1.5 rounded-r-lg transition flex items-center gap-1" title="Generar i descarregar l'arxiu de vídeo en alta definició">
-          <span>🎞️ MP4</span>
-        </button>
-      </div>
-
-      <button onclick="exportFramesZIP()" id="btn-export-zip" class="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs px-2.5 py-2 rounded-xl shadow transition flex items-center gap-1" title="Descarregar totes les fotos numerades (0001.jpg/.png...) dins d'un fitxer .ZIP per a Shotcut">
-        <span>📦 .ZIP</span>
+    <!-- Dreta: Exportació Directa + Utilitats -->
+    <div class="flex items-center gap-2 shrink-0">
+      <button onclick="exportVideoMP4()" id="btn-export-mp4" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs px-3.5 py-2 rounded-xl shadow transition flex items-center gap-1.5" title="Generar i descarregar l'arxiu de vídeo en format MP4">
+        <span>🎥</span> <span>Exportar MP4</span>
       </button>
 
-      <button onclick="toggleFullScreen()" id="btn-fullscreen" class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-bold w-8 h-8 rounded-xl transition flex items-center justify-center" title="Activar/Desactivar Pantalla Completa (F11) per guanyar espai en Chromebooks">
+      <button onclick="exportFramesZIP()" id="btn-export-zip" class="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs px-3 py-2 rounded-xl shadow transition flex items-center gap-1.5" title="Descarregar totes les fotos numerades dins d'un fitxer .ZIP per a Shotcut">
+        <span>📦</span> <span>Fotos .ZIP</span>
+      </button>
+
+      <button onclick="toggleFullScreen()" id="btn-fullscreen" class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-bold w-8 h-8 rounded-xl transition flex items-center justify-center" title="Activar/Desactivar Pantalla Completa">
         ⛶
-      </button>
-
-      <button onclick="openConfirmClearModal()" class="bg-slate-800 hover:bg-rose-950 hover:text-rose-300 hover:border-rose-700 text-slate-300 border border-slate-700 text-xs font-semibold px-2.5 py-2 rounded-xl transition" title="Nou projecte (Esborrar totes les fotos actuals)">
-        🗑️
       </button>
 
       <button onclick="toggleHelpModal(true)" class="bg-slate-800 hover:bg-slate-700 text-amber-400 border border-slate-700 text-xs font-bold w-8 h-8 rounded-xl transition flex items-center justify-center" title="Dreceres de teclat i guia ràpida">
@@ -188,330 +140,439 @@
   </header>
 
   <!-- ==========================================
-       1B. BARRA EXTERNA DEDICADA DE LA GOMA MÀGICA (FORA DEL VISOR, ZERO SOLAPAMENT AMB LA IMATGE!)
+       2. ESPAI CENTRAL D'ESTUDI EN 3 COLUMNES
        ========================================== -->
-  <div id="magic-eraser-toolbar" class="hidden bg-purple-950/95 border-b-2 border-purple-500 px-3 sm:px-6 py-2 shrink-0 z-30 shadow-lg">
-    <div class="max-w-6xl mx-auto flex flex-wrap items-center justify-between gap-2.5">
-      <div class="flex items-center gap-2 text-purple-200 font-display font-bold text-xs sm:text-sm">
-        <span class="px-2 py-0.5 rounded bg-purple-500 text-slate-950 font-bold text-xs">🪄 GOMA MÀGICA ACTIVA</span>
-        <span>Pinta directament sobre qualsevol punt de la imatge per esborrar mans o suports:</span>
-      </div>
+  <div class="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-[270px_1fr_280px] gap-3 px-3 py-2.5 overflow-hidden">
 
-      <div class="flex flex-wrap items-center gap-2">
-        <div class="flex items-center gap-1.5 bg-slate-900 border border-purple-500/40 rounded-xl px-2.5 py-1 text-xs">
-          <span class="text-slate-400">Fons d'origen:</span>
-          <select id="eraser-source-select" onchange="updateEraserSource()" class="bg-transparent font-bold text-purple-300 focus:outline-none cursor-pointer">
-            <option value="ref" class="bg-slate-900">Fons Net capturat</option>
-            <option value="first" class="bg-slate-900">Fotograma #1</option>
-            <option value="prev" class="bg-slate-900">Fotograma anterior (#-1)</option>
-          </select>
-        </div>
-
-        <div class="flex items-center gap-2 bg-slate-900 border border-purple-500/40 rounded-xl px-2.5 py-1 text-xs">
-          <span class="text-slate-400">Mida pinzell:</span>
-          <input type="range" id="eraser-size-slider" min="15" max="180" value="75" oninput="updateEraserBrushSize(this.value)" class="w-20 sm:w-24 accent-purple-400 cursor-pointer">
-          <span id="eraser-size-label" class="font-mono text-[11px] text-purple-300 w-9">75px</span>
-        </div>
-
-        <div class="flex items-center gap-1.5">
-          <button onclick="undoEraserStroke()" class="px-2.5 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200 border border-slate-700 transition" title="Desfer l'última pinzellada (Ctrl+Z)">
-            ↶ Desfés pinzellada
-          </button>
-          <button onclick="restoreOriginalEraserFrame()" class="px-2.5 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-amber-300 border border-slate-700 transition" title="Deixar la foto tal com estava abans d'entrar a la Goma Màgica">
-            ↺ Restaurar foto original
-          </button>
-          <button onclick="applyMagicEraserChanges()" class="px-3.5 py-1 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-xs font-bold text-white shadow transition">
-            ✅ Aplicar i Sortir
-          </button>
-          <button onclick="closeMagicEraser(true)" class="px-2.5 py-1 rounded-xl bg-slate-800 hover:bg-rose-950 text-xs font-semibold text-slate-300 hover:text-rose-300 transition">
-            ✕ Cancel·lar
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ==========================================
-       2. VISOR CENTRAL (CÀMERA EN VIU + CROMA + GOMA MÀGICA + PELL DE CEBA)
-       ========================================== -->
-  <main class="flex-1 min-h-0 relative flex items-center justify-center bg-slate-950 p-2 sm:p-3 overflow-hidden">
-    
-    <!-- Contenidor 16:9 del Visor (S'adapta automàticament en alçada i amplada sense tapar cap cantó) -->
-    <div id="stage-container" class="relative w-full h-full max-w-5xl max-h-full aspect-video bg-black rounded-2xl overflow-hidden shadow-2xl border-2 border-slate-800 flex items-center justify-center">
-      
-      <!-- Flux de Vídeo Real de la Webcam -->
-      <video id="webcam-video" autoplay playsinline muted class="w-full h-full object-contain"></video>
-
-      <!-- Escenari de Prova Interactiu (S'activa si no hi ha webcam o l'usuari tria "Escenari de Prova") -->
-      <canvas id="demo-stage-canvas" width="1920" height="1080" class="hidden w-full h-full object-contain cursor-grab active:cursor-grabbing"></canvas>
-
-      <!-- Llenç de Croma en Viu en Temps Real -->
-      <canvas id="live-chroma-canvas" width="1920" height="1080" class="hidden w-full h-full object-contain"></canvas>
-
-      <!-- Capa de Pell de Ceba (Onion Skin) i Pampalluga -->
-      <img id="onion-skin-img" alt="Pell de ceba" class="hidden pointer-events-none absolute inset-0 w-full h-full object-contain transition-opacity duration-75 z-10" style="opacity: 0.45;" />
-
-      <!-- Capa de Reproducció / Previsualització / Goma Màgica (z-30 perquè es vegi sempre per sobre del vídeo en fer Play!) -->
-      <canvas id="playback-canvas" width="1920" height="1080" class="hidden absolute inset-0 w-full h-full object-contain bg-black z-30"></canvas>
-
-      <!-- Cursor Circular del Pinzell de la Goma Màgica -->
-      <div id="eraser-cursor" class="hidden pointer-events-none fixed z-50 rounded-full border-2 border-amber-400 bg-amber-400/20 shadow-[0_0_12px_rgba(245,158,11,0.8)] -translate-x-1/2 -translate-y-1/2"></div>
-
-      <!-- Quadrícula de Regla dels Terços (Opcional) -->
-      <div id="grid-overlay" class="hidden pointer-events-none absolute inset-0 z-30">
-        <div class="w-full h-full grid grid-cols-3 grid-rows-3">
-          <div class="border-r border-b border-amber-400/35"></div>
-          <div class="border-r border-b border-amber-400/35"></div>
-          <div class="border-b border-amber-400/35"></div>
-          <div class="border-r border-b border-amber-400/35"></div>
-          <div class="border-r border-b border-amber-400/35 flex items-center justify-center">
-            <div class="w-3 h-3 border border-amber-400/60 rounded-full"></div>
-          </div>
-          <div class="border-b border-amber-400/35"></div>
-          <div class="border-r border-b border-amber-400/35"></div>
-          <div class="border-r border-b border-amber-400/35"></div>
-          <div></div>
-        </div>
-      </div>
-
-      <!-- Flash blanc de captura -->
-      <div id="shutter-flash" class="pointer-events-none absolute inset-0 bg-white opacity-0 z-40"></div>
-
-      <!-- Compte enrere gran per a l'Autodisparador -->
-      <div id="countdown-overlay" class="hidden pointer-events-none absolute inset-0 bg-slate-950/35 backdrop-blur-[1px] flex flex-col items-center justify-center z-40">
-        <div class="w-36 h-36 rounded-full border-4 border-amber-400 bg-slate-900/80 flex items-center justify-center shadow-2xl">
-          <span id="countdown-number" class="font-display font-bold text-7xl sm:text-8xl text-amber-400">3</span>
-        </div>
-        <span class="mt-3 px-3 py-1 rounded-full bg-slate-900/90 text-amber-300 font-bold text-xs uppercase tracking-wider border border-amber-500/30">
-          Autodisparador actiu · Retireu les mans!
-        </span>
-      </div>
-
-      <!-- BARRA FLOTANT SUPERIOR DINS DEL VISOR (s'amaga quan la Goma Màgica està activa perquè la imatge quedi 100% lliure!) -->
-      <div id="stage-top-hud" class="absolute top-3 left-3 right-3 flex flex-wrap items-center justify-between gap-2 pointer-events-none z-40">
+    <!-- ==========================================
+         COLUMNA ESQUERRA: CÀMERA, AJUDES I DISPARADOR
+         ========================================== -->
+    <aside class="dock-scroll overflow-y-auto space-y-2.5 pr-0.5 flex flex-col justify-between">
+      <div class="space-y-2.5">
         
-        <div class="flex flex-wrap items-center gap-2 pointer-events-auto">
-          <div id="mode-pill" class="px-3 py-1 rounded-full bg-slate-900/90 border border-slate-700 backdrop-blur text-xs font-bold flex items-center gap-2 text-emerald-400 shadow">
-            <span id="mode-dot" class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
-            <span id="mode-text">CÀMERA EN VIU</span>
+        <!-- Targeta 1: Font de Càmera i Òptica -->
+        <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-3 space-y-2.5 shadow-sm">
+          <div class="flex items-center justify-between">
+            <span class="text-[11px] font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
+              <span>📷</span> Càmera i Òptica
+            </span>
+            <span id="resolution-badge" class="px-2 py-0.5 rounded-md bg-slate-950 border border-slate-800 font-mono text-[10px] text-amber-300 font-semibold">
+              1920x1080
+            </span>
           </div>
 
-          <button id="btn-return-live" onclick="returnToLiveMode()" class="hidden px-3 py-1 rounded-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-lg transition flex items-center gap-1.5">
-            <span>📹 Tornar a Càmera en Viu</span>
-          </button>
-
-          <!-- Botó per capturar el Fons Net de Referència per a la Goma Màgica -->
-          <button id="btn-capture-bg-ref" onclick="captureReferenceBackground()" class="px-3 py-1 rounded-full bg-slate-900/90 hover:bg-slate-800 border border-slate-700 text-slate-200 text-xs font-semibold shadow transition flex items-center gap-1.5" title="Captura una foto de l'escenari buit (sense personatges ni mans) per poder esborrar mans o suports després amb la Goma Màgica">
-            <span id="bg-ref-label">🪄 Capturar Fons Net (Goma Màgica)</span>
-          </button>
-        </div>
-
-        <!-- Comptador de Temps i Targetes -->
-        <div class="px-3.5 py-1 rounded-full bg-slate-900/90 border border-slate-700 backdrop-blur font-mono text-xs text-slate-200 shadow flex items-center gap-2.5">
-          <span id="hud-frame-info">Targeta: <strong class="text-amber-400">0 / 0</strong></span>
-          <span class="text-slate-600">|</span>
-          <span id="hud-time-info">Durada: <strong class="text-emerald-400">0.0 s</strong></span>
-        </div>
-      </div>
-
-      <!-- PANELL FLOTANT DE CROMA EN VIU -->
-      <div id="chroma-panel" class="hidden absolute top-14 right-3 z-40 w-80 bg-slate-900/95 border border-emerald-500/50 backdrop-blur-md rounded-2xl p-4 shadow-2xl space-y-3 text-xs">
-        <div class="flex items-center justify-between border-b border-slate-800 pb-2">
-          <div class="flex items-center gap-2 font-display font-bold text-sm text-emerald-400">
-            <span>🟩 Estudi de Croma en Viu</span>
+          <!-- Selector de Webcam USB -->
+          <div class="flex items-center bg-slate-950 border border-slate-800 rounded-xl px-2.5 py-1.5 gap-1.5">
+            <select id="camera-select" onchange="handleCameraChange()" class="bg-transparent text-xs font-medium text-slate-200 focus:outline-none w-full truncate cursor-pointer">
+              <option value="loading" class="bg-slate-900">Cercant càmeres USB...</option>
+            </select>
+            <button onclick="refreshCameraList(false)" class="text-slate-400 hover:text-white px-1 transition text-xs shrink-0" title="Refrescar la llista de càmeres connectades">
+              ↻
+            </button>
           </div>
-          <button onclick="toggleChromaPanel()" class="text-slate-400 hover:text-white font-bold">✕</button>
+
+          <!-- Botons Girar 180° i Mirall -->
+          <div class="grid grid-cols-2 gap-1.5">
+            <button onclick="toggleFlip180()" id="btn-flip-180" class="py-1.5 px-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-semibold text-slate-300 transition flex items-center justify-center gap-1" title="Girar la imatge 180° (ideal per a plans zenitals)">
+              <span>🔄 180°</span>
+            </button>
+            <button onclick="toggleMirror()" id="btn-mirror" class="py-1.5 px-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-semibold text-slate-300 transition flex items-center justify-center gap-1" title="Invertir horitzontalment (Efecte mirall)">
+              <span>↔️ Mirall</span>
+            </button>
+          </div>
+
+          <!-- Qualitat de Captura de Fotos -->
+          <div class="pt-1 border-t border-slate-800/80">
+            <label class="block text-[10px] text-slate-400 font-semibold mb-1">Qualitat de captura fotogràfica:</label>
+            <select id="photo-quality-select" onchange="changePhotoQuality(this.value)" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-2.5 py-1.5 text-xs font-bold text-emerald-300 focus:outline-none cursor-pointer">
+              <option value="jpg92" selected class="bg-slate-900 text-slate-100">JPG 92% · Estàndard (Màx 1500)</option>
+              <option value="jpg98" class="bg-slate-900 text-amber-300">JPG 98% · Alta Qualitat (Màx 800)</option>
+              <option value="png100" class="bg-slate-900 text-purple-300">PNG 100% · Sense pèrdua (Màx 350)</option>
+            </select>
+          </div>
         </div>
 
-        <div class="flex items-center justify-between bg-slate-950 p-2.5 rounded-xl border border-slate-800">
-          <span class="font-semibold text-slate-200">Activar Croma en Viu</span>
-          <button onclick="toggleLiveChromaActive()" id="btn-chroma-switch" class="px-3 py-1 rounded-lg bg-slate-800 text-slate-400 font-bold transition">
-            DESACTIVAT
-          </button>
-        </div>
+        <!-- Targeta 2: Ajudes Visuals d'Animació -->
+        <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-3 space-y-2.5 shadow-sm">
+          <div class="flex items-center justify-between">
+            <span class="text-[11px] font-bold uppercase tracking-wider text-purple-400 flex items-center gap-1.5">
+              <span>👻</span> Ajudes d'Animació
+            </span>
+            <button onclick="toggleOnionSkin()" id="btn-onion" class="text-[11px] font-bold px-2 py-0.5 rounded-md bg-purple-500/20 text-purple-300 border border-purple-500/30 hover:bg-purple-500/30 transition" title="Activar/Desactivar Pell de Ceba (Tecla O)">
+              Pell Ceba: ON
+            </button>
+          </div>
 
-        <div class="space-y-1.5">
-          <label class="text-slate-400 font-medium block">Color del fons a eliminar:</label>
-          <div class="flex items-center gap-2">
-            <input type="color" id="chroma-color-picker" value="#00b140" onchange="setChromaColorHex(this.value)" class="w-9 h-8 rounded cursor-pointer bg-transparent border border-slate-700">
-            <button onclick="activateChromaEyedropper()" id="btn-chroma-eyedropper" class="flex-1 py-1.5 px-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 font-semibold text-slate-200 flex items-center justify-center gap-1.5 transition">
-              <span>💧 Tria color a la pantalla</span>
+          <!-- Slider Pell de Ceba -->
+          <div class="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 space-y-1">
+            <div class="flex justify-between text-[11px]">
+              <span class="text-slate-400">Opacitat fantasma:</span>
+              <span id="onion-val" class="font-mono text-purple-300 font-bold">45%</span>
+            </div>
+            <input type="range" id="onion-slider" min="0" max="90" value="45" oninput="updateOnionOpacity(this.value)" class="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-purple-500">
+          </div>
+
+          <!-- Pampalluga i Quadrícula -->
+          <div class="grid grid-cols-2 gap-1.5">
+            <button onclick="toggleBlinkMode()" id="btn-blink" class="py-1.5 px-2 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-xs font-semibold text-amber-300 transition flex items-center justify-center gap-1" title="Alternar entre última foto i càmera en viu (Tecla Tab)">
+              <span>👁️ Pampalluga</span>
+            </button>
+            <button onclick="toggleGrid()" id="btn-grid" class="py-1.5 px-2 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-xs font-semibold text-slate-300 transition flex items-center justify-center gap-1" title="Mostrar quadrícula de terços (Tecla G)">
+              <span># Quadrícula</span>
             </button>
           </div>
         </div>
 
-        <div class="space-y-2">
-          <div>
-            <div class="flex justify-between text-[11px] mb-0.5">
-              <span class="text-slate-400">Tolerància del verd:</span>
-              <span id="chroma-tol-val" class="font-mono text-emerald-300">95</span>
+        <!-- Targeta 3: Velocitat (FPS), Autodisparador i Coixí -->
+        <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-3 space-y-2.5 shadow-sm">
+          <span class="text-[11px] font-bold uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
+            <span>⏱️</span> Ritme i Disparador
+          </span>
+
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block text-[10px] text-slate-400 font-semibold mb-1">Velocitat (FPS):</label>
+              <select id="fps-select" onchange="changeFPS(this.value)" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-2 py-1.5 text-xs font-bold text-amber-400 focus:outline-none cursor-pointer">
+                <option value="4" class="bg-slate-900">4 FPS (Infantil)</option>
+                <option value="8" selected class="bg-slate-900">8 FPS (Aula)</option>
+                <option value="10" class="bg-slate-900">10 FPS</option>
+                <option value="12" class="bg-slate-900">12 FPS (Suau)</option>
+                <option value="15" class="bg-slate-900">15 FPS</option>
+                <option value="24" class="bg-slate-900">24 FPS (Cinema)</option>
+              </select>
             </div>
-            <input type="range" id="chroma-tolerance" min="20" max="200" value="95" oninput="updateChromaSettings()" class="w-full h-1.5 bg-slate-700 rounded-lg accent-emerald-500 cursor-pointer">
+
+            <div>
+              <label class="block text-[10px] text-slate-400 font-semibold mb-1">Autodisparador:</label>
+              <select id="interval-select" onchange="setIntervalTimer(this.value)" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-2 py-1.5 text-xs font-semibold text-slate-200 focus:outline-none cursor-pointer">
+                <option value="0" class="bg-slate-900">Manual</option>
+                <option value="3" class="bg-slate-900">Cada 3 s</option>
+                <option value="5" class="bg-slate-900">Cada 5 s</option>
+                <option value="10" class="bg-slate-900">Cada 10 s</option>
+              </select>
+            </div>
           </div>
-          <div>
-            <div class="flex justify-between text-[11px] mb-0.5">
-              <span class="text-slate-400">Suavitzat de vores:</span>
-              <span id="chroma-smooth-val" class="font-mono text-emerald-300">25</span>
-            </div>
-            <input type="range" id="chroma-smoothness" min="5" max="80" value="25" oninput="updateChromaSettings()" class="w-full h-1.5 bg-slate-700 rounded-lg accent-emerald-500 cursor-pointer">
+
+          <div class="pt-1 border-t border-slate-800/80 flex items-center justify-between gap-2">
+            <span class="text-[11px] text-slate-400">Coixí d'inici/final:</span>
+            <button onclick="captureCushionFour()" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-amber-300 font-bold text-xs transition flex items-center gap-1" title="Captura 1 foto amb pausa 4x (0.5 s) per començar o acabar l'escena suaument">
+              <span>📸 +4 Coixí</span>
+            </button>
           </div>
         </div>
 
-        <div class="space-y-1.5 pt-1 border-t border-slate-800">
-          <label class="text-slate-400 font-medium block">Escenari de fons substitut:</label>
-          <div class="grid grid-cols-2 gap-1.5">
-            <button onclick="selectPresetBackground('volcano')" class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-left truncate border border-slate-700">🌋 Volcà en erupció</button>
-            <button onclick="selectPresetBackground('space')" class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-left truncate border border-slate-700">🚀 Espai i Planetes</button>
-            <button onclick="selectPresetBackground('forest')" class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-left truncate border border-slate-700">🌲 Bosc encantat</button>
-            <button onclick="selectPresetBackground('chalkboard')" class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-left truncate border border-slate-700">🏫 Pissarra d'aula</button>
-          </div>
-          <label class="mt-1.5 w-full py-1.5 px-3 rounded-xl bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/40 text-emerald-300 font-semibold flex items-center justify-center gap-2 cursor-pointer transition">
-            <span>🖼️ Pujar imatge pròpia...</span>
-            <input type="file" accept="image/*" onchange="handleCustomChromaBgUpload(event)" class="hidden">
-          </label>
-        </div>
       </div>
+    </aside>
 
-      <!-- Ajuda interactiva quan s'utilitza l'Escenari de Prova -->
-      <div id="demo-banner" class="hidden absolute bottom-3 left-3 bg-indigo-950/90 border border-indigo-500/50 text-indigo-200 px-3 py-1.5 rounded-xl text-xs flex flex-wrap items-center gap-2 shadow-lg z-10">
-        <span>👆 <strong>Escenari de Prova:</strong> Arrossega el ninot i prem <span class="kbd-badge">Espai</span>!</span>
-        <button onclick="toggleDemoGreenScreen()" id="btn-demo-greenscreen" class="ml-1 px-2 py-0.5 rounded bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[11px] transition">
-          Posar Tela Verda de Prova
-        </button>
-      </div>
-
-    </div>
-
-  </main>
-
-  <!-- ==========================================
-       3. TAULER DE CONTROL I LÍNIA DE TEMPS (PART INFERIOR)
-       ========================================== -->
-  <section class="bg-slate-900 border-t border-slate-800 px-3 sm:px-6 py-2.5 space-y-2.5 shrink-0 z-20">
-    
-    <!-- Barra de Controls d'Estudi -->
-    <div class="flex flex-wrap items-center justify-between gap-2.5">
+    <!-- ==========================================
+         COLUMNA CENTRAL: VISOR 16:9 NET + TRANSPORT PRINCIPAL
+         ========================================== -->
+    <main class="flex flex-col justify-between min-h-0 min-w-0 bg-slate-900/40 border border-slate-800/80 rounded-2xl p-2.5 overflow-hidden">
       
-      <!-- Esquerra: Pell de Ceba, Pampalluga (Tab), Quadrícula i Autodisparador -->
-      <div class="flex flex-wrap items-center gap-2">
-        
-        <!-- Control Pell de Ceba -->
-        <div class="flex items-center gap-2 bg-slate-950 border border-slate-800 px-2.5 py-1.5 rounded-xl">
-          <button onclick="toggleOnionSkin()" id="btn-onion" class="text-xs font-bold flex items-center gap-1 text-purple-400 hover:text-purple-300 transition" title="Activar/Desactivar Pell de Ceba (Tecla O)">
-            <span>👻</span>
-            <span class="hidden md:inline">Pell Ceba</span>
+      <!-- Barra d'estat integrada sobre el visor (no tapa mai el vídeo!) -->
+      <div id="stage-top-hud" class="flex flex-wrap items-center justify-between gap-2 pb-2 px-1 shrink-0">
+        <div class="flex items-center gap-2">
+          <div id="mode-pill" class="px-3 py-1 rounded-full bg-slate-900 border border-slate-700 text-xs font-bold flex items-center gap-2 text-emerald-400 shadow-sm">
+            <span id="mode-dot" class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            <span id="mode-text">CÀMERA EN VIU</span>
+          </div>
+
+          <button id="btn-capture-bg-ref" onclick="captureReferenceBackground()" class="px-3 py-1 rounded-full bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-200 text-xs font-semibold transition flex items-center gap-1.5" title="Captura una foto de l'escenari buit per poder esborrar mans o suports després amb la Goma Màgica">
+            <span id="bg-ref-label">🪄 Capturar Fons Net</span>
           </button>
-          <input type="range" id="onion-slider" min="0" max="90" value="45" oninput="updateOnionOpacity(this.value)" class="w-16 sm:w-20 h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-purple-500" title="Opacitat de la Pell de Ceba">
-          <span id="onion-val" class="font-mono text-[11px] text-slate-400 w-7">45%</span>
         </div>
 
-        <!-- Botó Pampalluga (Tab) -->
-        <button onclick="toggleBlinkMode()" id="btn-blink" class="px-2.5 py-1.5 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-xs font-semibold text-amber-300 transition flex items-center gap-1" title="Alternar ràpidament entre l'última foto i la càmera en viu (Tecla Tab)">
-          <span>👁️</span> <span class="hidden lg:inline">Pampalluga</span>
-        </button>
-
-        <!-- Botó Quadrícula (G) -->
-        <button onclick="toggleGrid()" id="btn-grid" class="px-2.5 py-1.5 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-xs font-semibold text-slate-300 transition flex items-center gap-1" title="Mostrar/Amagar la quadrícula dels terços (Tecla G)">
-          <span>#</span> <span class="hidden lg:inline">Quadrícula</span>
-        </button>
-
-        <!-- Selector d'Autodisparador / Intervalòmetre -->
-        <div class="flex items-center gap-1 bg-slate-950 border border-slate-800 px-2.5 py-1.5 rounded-xl" title="Autodisparador automàtic amb avís sonor">
-          <span class="text-xs">⏱️</span>
-          <select id="interval-select" onchange="setIntervalTimer(this.value)" class="bg-transparent text-xs font-semibold text-slate-300 focus:outline-none cursor-pointer">
-            <option value="0" class="bg-slate-900">Manual</option>
-            <option value="3" class="bg-slate-900">Cada 3 s</option>
-            <option value="5" class="bg-slate-900">Cada 5 s</option>
-            <option value="10" class="bg-slate-900">Cada 10 s</option>
-          </select>
+        <div class="px-3 py-1 rounded-full bg-slate-900 border border-slate-700 font-mono text-xs text-slate-200 flex items-center gap-2.5">
+          <span id="hud-frame-info">Targeta: <strong class="text-amber-400">0 / 0</strong></span>
+          <span class="text-slate-600">|</span>
+          <span id="hud-time-info">Durada: <strong class="text-emerald-400">0.0 s</strong> (8 FPS)</span>
         </div>
       </div>
 
-      <!-- Centre: Pausa per Fotograma (Hold), +4 Coixí, Captura i Play -->
-      <div class="flex items-center gap-2 mx-auto sm:mx-0">
-        
-        <!-- Selector Intel·ligent de Durada / Pausa (Hold) sense duplicar targetes -->
-        <div class="flex items-center gap-1.5 bg-slate-950 border border-slate-800 px-2.5 py-1.5 rounded-xl" title="Allarga la durada dels fotogrames seleccionats en 1 sola targeta sense omplir la barra de fotos repetides!">
-          <span class="text-[11px] text-slate-400 hidden xl:inline">Pausa:</span>
-          <select id="frame-hold-select" onchange="setSelectedFramesHold(this.value)" class="bg-transparent text-xs font-bold text-slate-200 focus:outline-none cursor-pointer">
-            <option value="1" class="bg-slate-900">1x (Normal)</option>
-            <option value="2" class="bg-slate-900">2x (Doble)</option>
-            <option value="4" class="bg-slate-900">4x (Coixí 0.5s)</option>
-            <option value="8" class="bg-slate-900">8x (Pausa 1s)</option>
-            <option value="16" class="bg-slate-900">16x (Títol 2s)</option>
-            <option value="24" class="bg-slate-900">24x (Títol 3s)</option>
-          </select>
+      <!-- Contenidor del Monitor 16:9 Centrat -->
+      <div class="flex-1 min-h-0 flex items-center justify-center relative overflow-hidden">
+        <div id="stage-container" class="relative w-full h-full max-w-full max-h-full aspect-video bg-black rounded-xl overflow-hidden shadow-2xl border border-slate-800 flex items-center justify-center">
+          
+          <!-- Flux de Vídeo Real de la Webcam -->
+          <video id="webcam-video" autoplay playsinline muted class="w-full h-full object-contain"></video>
+
+          <!-- Escenari de Prova Interactiu -->
+          <canvas id="demo-stage-canvas" width="1920" height="1080" class="hidden w-full h-full object-contain cursor-grab active:cursor-grabbing"></canvas>
+
+          <!-- Llenç de Croma en Viu en Temps Real -->
+          <canvas id="live-chroma-canvas" width="1920" height="1080" class="hidden w-full h-full object-contain"></canvas>
+
+          <!-- Capa de Pell de Ceba (Onion Skin) i Pampalluga -->
+          <img id="onion-skin-img" alt="Pell de ceba" class="hidden pointer-events-none absolute inset-0 w-full h-full object-contain transition-opacity duration-75 z-10" style="opacity: 0.45;" />
+
+          <!-- Capa de Reproducció / Previsualització / Goma Màgica -->
+          <canvas id="playback-canvas" width="1920" height="1080" class="hidden absolute inset-0 w-full h-full object-contain bg-black z-30"></canvas>
+
+          <!-- Cursor Circular del Pinzell de la Goma Màgica -->
+          <div id="eraser-cursor" class="hidden pointer-events-none fixed z-50 rounded-full border-2 border-amber-400 bg-amber-400/20 shadow-[0_0_12px_rgba(245,158,11,0.8)] -translate-x-1/2 -translate-y-1/2"></div>
+
+          <!-- Quadrícula de Regla dels Terços -->
+          <div id="grid-overlay" class="hidden pointer-events-none absolute inset-0 z-30">
+            <div class="w-full h-full grid grid-cols-3 grid-rows-3">
+              <div class="border-r border-b border-amber-400/35"></div>
+              <div class="border-r border-b border-amber-400/35"></div>
+              <div class="border-b border-amber-400/35"></div>
+              <div class="border-r border-b border-amber-400/35"></div>
+              <div class="border-r border-b border-amber-400/35 flex items-center justify-center">
+                <div class="w-3 h-3 border border-amber-400/60 rounded-full"></div>
+              </div>
+              <div class="border-b border-amber-400/35"></div>
+              <div class="border-r border-b border-amber-400/35"></div>
+              <div class="border-r border-b border-amber-400/35"></div>
+              <div></div>
+            </div>
+          </div>
+
+          <!-- Flash blanc de captura -->
+          <div id="shutter-flash" class="pointer-events-none absolute inset-0 bg-white opacity-0 z-40"></div>
+
+          <!-- Compte enrere gran per a l'Autodisparador -->
+          <div id="countdown-overlay" class="hidden pointer-events-none absolute inset-0 bg-slate-950/35 backdrop-blur-[1px] flex flex-col items-center justify-center z-40">
+            <div class="w-32 h-32 rounded-full border-4 border-amber-400 bg-slate-900/80 flex items-center justify-center shadow-2xl">
+              <span id="countdown-number" class="font-display font-bold text-6xl text-amber-400">3</span>
+            </div>
+            <span class="mt-2 px-3 py-1 rounded-full bg-slate-900/90 text-amber-300 font-bold text-xs uppercase tracking-wider border border-amber-500/30">
+              Autodisparador actiu · Retireu les mans!
+            </span>
+          </div>
+
+          <!-- Ajuda interactiva quan s'utilitza l'Escenari de Prova -->
+          <div id="demo-banner" class="hidden absolute bottom-2.5 left-2.5 bg-indigo-950/90 border border-indigo-500/50 text-indigo-200 px-3 py-1 rounded-xl text-xs flex flex-wrap items-center gap-2 shadow-lg z-10">
+            <span>👆 <strong>Escenari de Prova:</strong> Arrossega el ninot i prem <span class="kbd-badge">Espai</span>!</span>
+            <button onclick="toggleDemoGreenScreen()" id="btn-demo-greenscreen" class="ml-1 px-2 py-0.5 rounded bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[11px] transition">
+              Posar Tela Verda de Prova
+            </button>
+          </div>
+
         </div>
+      </div>
 
-        <!-- Botó ràpid +4 Coixí -->
-        <button onclick="captureCushionFour()" class="px-2.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-amber-300 font-bold text-xs transition hidden md:flex items-center gap-1" title="Captura 1 foto amb pausa de 4 fotogrames (0.5 s) per fer el coixí d'inici o final sense omplir la barra!">
-          <span>+4 Coixí</span>
+      <!-- Barra de Transport Principal sota el Monitor 16:9 -->
+      <div class="pt-2.5 flex items-center justify-center gap-3 shrink-0">
+        <button id="btn-return-live" onclick="returnToLiveMode()" class="hidden px-4 py-2 rounded-2xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-display font-bold text-xs sm:text-sm shadow-lg transition flex items-center gap-1.5">
+          <span>📹 Tornar a Càmera en Viu</span>
+          <span class="text-[10px] font-mono bg-amber-600/30 px-1.5 py-0.5 rounded">Esc</span>
         </button>
 
-        <!-- BOTÓ VERMELL DE CAPTURA -->
-        <button onclick="triggerCapture()" id="btn-capture" class="px-5 py-2 rounded-2xl bg-rose-600 hover:bg-rose-500 active:scale-95 text-white font-display font-bold text-sm sm:text-base shadow-lg shadow-rose-600/30 border border-rose-400/40 transition flex items-center gap-2">
-          <span class="w-3 h-3 rounded-full bg-white"></span>
-          <span>CAPTURAR</span>
-          <span class="text-[11px] font-mono bg-rose-800/80 px-1.5 py-0.5 rounded text-rose-100 hidden sm:inline">Espai</span>
+        <button onclick="triggerCapture()" id="btn-capture" class="px-7 py-2.5 rounded-2xl bg-rose-600 hover:bg-rose-500 active:scale-95 text-white font-display font-bold text-sm sm:text-base shadow-lg shadow-rose-600/30 border border-rose-400/40 transition flex items-center gap-2.5">
+          <span class="w-3.5 h-3.5 rounded-full bg-white shadow"></span>
+          <span>CAPTURAR FOTO</span>
+          <span class="text-[11px] font-mono bg-rose-800/80 px-2 py-0.5 rounded text-rose-100">Espai</span>
         </button>
 
-        <!-- BOTÓ REPRODUIR / PAUSA -->
-        <button onclick="togglePlayback()" id="btn-play" class="px-4 py-2 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-display font-bold text-sm sm:text-base shadow-lg shadow-emerald-600/20 transition flex items-center gap-2">
+        <button onclick="togglePlayback()" id="btn-play" class="px-5 py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-display font-bold text-sm sm:text-base shadow-lg shadow-emerald-600/20 transition flex items-center gap-2">
           <span id="play-icon">▶</span>
           <span id="play-text">Play</span>
+          <span class="text-[11px] font-mono bg-emerald-800/80 px-1.5 py-0.5 rounded text-emerald-100 hidden sm:inline">Enter</span>
         </button>
       </div>
 
-      <!-- Dreta: Velocitat FPS, Goma Màgica i Eines d'Edició en Bloc + Desfés -->
-      <div class="flex flex-wrap items-center gap-2">
-        
-        <!-- Selector FPS -->
-        <div class="flex items-center gap-1.5 bg-slate-950 border border-slate-800 px-2.5 py-1.5 rounded-xl">
-          <select id="fps-select" onchange="changeFPS(this.value)" class="bg-transparent text-xs font-bold text-amber-400 focus:outline-none cursor-pointer">
-            <option value="4" class="bg-slate-900">4 FPS (Infantil)</option>
-            <option value="8" selected class="bg-slate-900">8 FPS (Aula)</option>
-            <option value="10" class="bg-slate-900">10 FPS</option>
-            <option value="12" class="bg-slate-900">12 FPS (Suau)</option>
-            <option value="15" class="bg-slate-900">15 FPS</option>
-            <option value="24" class="bg-slate-900">24 FPS (Cinema)</option>
-          </select>
+    </main>
+
+    <!-- ==========================================
+         COLUMNA DRETA: ESTUDI CREATIU, CROMA, GOMA MÀGICA I EDICIÓ
+         ========================================== -->
+    <aside class="dock-scroll overflow-y-auto space-y-2.5 pl-0.5 flex flex-col justify-between">
+      <div class="space-y-2.5">
+
+        <!-- Targeta 1: Eines Creatives d'Estudi (Títols, Croma i Goma Màgica integrats al Dock!) -->
+        <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-3 space-y-2.5 shadow-sm">
+          <span class="text-[11px] font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
+            <span>✨</span> Estudi Creatiu
+          </span>
+
+          <!-- Botons d'accés ràpid -->
+          <div class="grid grid-cols-3 gap-1.5">
+            <button onclick="openTitleCardModal()" class="py-2 px-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-[11px] font-bold text-amber-300 transition flex flex-col items-center gap-0.5" title="Inserir una portada de Títol o Crèdits">
+              <span class="text-sm">🔤</span>
+              <span>Títols</span>
+            </button>
+            <button onclick="toggleChromaPanel()" id="btn-chroma-top" class="py-2 px-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-[11px] font-bold text-emerald-400 transition flex flex-col items-center gap-0.5" title="Obrir controls de Croma en Viu">
+              <span class="text-sm">🟩</span>
+              <span>Croma</span>
+            </button>
+            <button onclick="openMagicEraserOnSelected()" id="btn-magic-eraser" class="py-2 px-1.5 rounded-xl bg-purple-600/20 hover:bg-purple-600/35 border border-purple-500/40 text-[11px] font-bold text-purple-200 transition flex flex-col items-center gap-0.5" title="Esborrar mans o suports del fotograma seleccionat">
+              <span class="text-sm">🪄</span>
+              <span>Goma Màgica</span>
+            </button>
+          </div>
+
+          <!-- SUB-PANELL INTEGRAT: GOMA MÀGICA (S'obre aquí mateix sense tapar el vídeo!) -->
+          <div id="magic-eraser-toolbar" class="hidden bg-purple-950/50 border border-purple-500/50 rounded-xl p-2.5 space-y-2.5 text-xs">
+            <div class="flex items-center justify-between border-b border-purple-500/30 pb-1.5">
+              <span class="font-display font-bold text-purple-200 text-xs flex items-center gap-1">
+                <span>🪄</span> Goma Màgica Activa
+              </span>
+              <button onclick="closeMagicEraser(true)" class="text-slate-400 hover:text-white font-bold text-xs">✕</button>
+            </div>
+
+            <div>
+              <label class="block text-[10px] text-purple-200/80 mb-1">Fons d'origen per substituir:</label>
+              <select id="eraser-source-select" onchange="updateEraserSource()" class="w-full bg-slate-950 border border-purple-500/40 rounded-lg px-2 py-1 text-xs font-bold text-purple-300 focus:outline-none">
+                <option value="ref" class="bg-slate-900">Fons Net capturat</option>
+                <option value="first" class="bg-slate-900">Fotograma #1</option>
+                <option value="prev" class="bg-slate-900">Fotograma anterior (#-1)</option>
+              </select>
+            </div>
+
+            <div>
+              <div class="flex justify-between text-[11px] mb-0.5">
+                <span class="text-purple-200/80">Mida del pinzell:</span>
+                <span id="eraser-size-label" class="font-mono text-purple-300 font-bold">75px</span>
+              </div>
+              <input type="range" id="eraser-size-slider" min="15" max="180" value="75" oninput="updateEraserBrushSize(this.value)" class="w-full h-1.5 bg-slate-800 rounded-lg accent-purple-400 cursor-pointer">
+            </div>
+
+            <div class="grid grid-cols-2 gap-1.5">
+              <button onclick="undoEraserStroke()" class="py-1.5 px-2 rounded-lg bg-slate-900 hover:bg-slate-800 text-[11px] font-semibold text-slate-200 border border-slate-700 transition">
+                ↶ Desfés traç
+              </button>
+              <button onclick="restoreOriginalEraserFrame()" class="py-1.5 px-2 rounded-lg bg-slate-900 hover:bg-slate-800 text-[11px] font-semibold text-amber-300 border border-slate-700 transition">
+                ↺ Original
+              </button>
+            </div>
+
+            <button onclick="applyMagicEraserChanges()" class="w-full py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-xs font-bold text-white shadow transition">
+              ✅ Aplicar i Desar Foto
+            </button>
+          </div>
+
+          <!-- SUB-PANELL INTEGRAT: CROMA EN VIU (S'obre al Dock Dret sense tapar el vídeo!) -->
+          <div id="chroma-panel" class="hidden bg-emerald-950/30 border border-emerald-500/40 rounded-xl p-2.5 space-y-2.5 text-xs">
+            <div class="flex items-center justify-between border-b border-emerald-500/20 pb-1.5">
+              <span class="font-display font-bold text-emerald-400 text-xs">🟩 Croma en Viu</span>
+              <button onclick="toggleChromaPanel()" class="text-slate-400 hover:text-white font-bold">✕</button>
+            </div>
+
+            <div class="flex items-center justify-between bg-slate-950 p-2 rounded-lg border border-slate-800">
+              <span class="font-semibold text-slate-200 text-[11px]">Estat del Croma:</span>
+              <button onclick="toggleLiveChromaActive()" id="btn-chroma-switch" class="px-2.5 py-1 rounded-md bg-slate-800 text-slate-400 font-bold text-[11px] transition">
+                DESACTIVAT
+              </button>
+            </div>
+
+            <div class="flex items-center gap-1.5">
+              <input type="color" id="chroma-color-picker" value="#00b140" onchange="setChromaColorHex(this.value)" class="w-8 h-8 rounded cursor-pointer bg-transparent border border-slate-700 shrink-0">
+              <button onclick="activateChromaEyedropper()" id="btn-chroma-eyedropper" class="flex-1 py-1.5 px-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 font-semibold text-[11px] text-slate-200 flex items-center justify-center gap-1 transition">
+                <span>💧 Comptagotes a pantalla</span>
+              </button>
+            </div>
+
+            <div class="space-y-1.5">
+              <div>
+                <div class="flex justify-between text-[10px] mb-0.5">
+                  <span class="text-slate-400">Tolerància:</span>
+                  <span id="chroma-tol-val" class="font-mono text-emerald-300">95</span>
+                </div>
+                <input type="range" id="chroma-tolerance" min="20" max="200" value="95" oninput="updateChromaSettings()" class="w-full h-1.5 bg-slate-800 rounded-lg accent-emerald-500 cursor-pointer">
+              </div>
+              <div>
+                <div class="flex justify-between text-[10px] mb-0.5">
+                  <span class="text-slate-400">Suavitzat:</span>
+                  <span id="chroma-smooth-val" class="font-mono text-emerald-300">25</span>
+                </div>
+                <input type="range" id="chroma-smoothness" min="5" max="80" value="25" oninput="updateChromaSettings()" class="w-full h-1.5 bg-slate-800 rounded-lg accent-emerald-500 cursor-pointer">
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-1 pt-1 border-t border-slate-800/80 text-[11px]">
+              <button onclick="selectPresetBackground('volcano')" class="p-1.5 rounded bg-slate-900 hover:bg-slate-800 text-left truncate border border-slate-800">🌋 Volcà</button>
+              <button onclick="selectPresetBackground('space')" class="p-1.5 rounded bg-slate-900 hover:bg-slate-800 text-left truncate border border-slate-800">🚀 Espai</button>
+              <button onclick="selectPresetBackground('forest')" class="p-1.5 rounded bg-slate-900 hover:bg-slate-800 text-left truncate border border-slate-800">🌲 Bosc</button>
+              <button onclick="selectPresetBackground('chalkboard')" class="p-1.5 rounded bg-slate-900 hover:bg-slate-800 text-left truncate border border-slate-800">🏫 Pissarra</button>
+            </div>
+
+            <label class="w-full py-1.5 px-2 rounded-lg bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/40 text-emerald-300 font-semibold text-[11px] flex items-center justify-center gap-1.5 cursor-pointer transition">
+              <span>🖼️ Pujar fons propi...</span>
+              <input type="file" accept="image/*" onchange="handleCustomChromaBgUpload(event)" class="hidden">
+            </label>
+          </div>
         </div>
 
-        <!-- Botó Goma Màgica -->
-        <button onclick="openMagicEraserOnSelected()" id="btn-magic-eraser" class="px-3 py-1.5 rounded-xl bg-purple-600/25 hover:bg-purple-600/40 border border-purple-500/50 text-purple-200 text-xs font-bold transition flex items-center gap-1.5" title="Esborrar mans, dits o suports del fotograma actiu usant el fons de referència">
-          <span>🪄 Goma Màgica</span>
-        </button>
+        <!-- Targeta 2: Edició de Fotogrames Seleccionats -->
+        <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-3 space-y-2.5 shadow-sm">
+          <div class="flex items-center justify-between">
+            <span class="text-[11px] font-bold uppercase tracking-wider text-indigo-400 flex items-center gap-1.5">
+              <span>🎞️</span> Edició de Fotograma
+            </span>
+            <button onclick="undoLastTimelineAction()" id="btn-undo-timeline" disabled class="px-2 py-0.5 rounded-md bg-slate-950 hover:bg-slate-800 disabled:opacity-35 text-emerald-300 border border-slate-800 text-[11px] font-bold transition" title="Desfer l'últim esborrat o canvi a la línia de temps (Ctrl+Z)">
+              ↩ Desfés
+            </button>
+          </div>
 
-        <!-- Accions sobre el Fotograma o Bloc de Fotogrames Seleccionats -->
-        <div class="flex items-center bg-slate-950 border border-slate-800 rounded-xl p-1 gap-1">
-          <button onclick="undoLastTimelineAction()" id="btn-undo-timeline" disabled class="px-2 py-1 rounded-lg hover:bg-slate-800 disabled:opacity-35 text-emerald-300 text-xs font-bold transition" title="Desfer l'últim esborrat o canvi a la línia de temps (Ctrl+Z)">
-            ↩
-          </button>
-          <button onclick="moveSelectedFrames(-1)" class="px-2 py-1 rounded-lg hover:bg-slate-800 text-slate-300 text-xs font-bold transition" title="Moure els fotogrames seleccionats cap a l'esquerra">
-            ◀
-          </button>
-          <button onclick="moveSelectedFrames(1)" class="px-2 py-1 rounded-lg hover:bg-slate-800 text-slate-300 text-xs font-bold transition" title="Moure els fotogrames seleccionats cap a la dreta">
-            ▶
-          </button>
-          <button onclick="reverseSelectedFrames()" class="px-2 py-1 rounded-lg hover:bg-slate-800 text-indigo-300 text-xs font-bold transition" title="Invertir l'ordre de les targetes seleccionades (efecte rebobinat / bumerang)">
-            ⇄
-          </button>
-          <button onclick="duplicateSelectedFrames()" class="px-2 py-1 rounded-lg hover:bg-slate-800 text-amber-300 text-xs font-semibold transition flex items-center gap-1" title="Duplicar totes les targetes seleccionades">
-            <span>⧉</span> <span class="hidden xl:inline">x2</span>
-          </button>
-          <button onclick="deleteSelectedFrames()" class="px-2 py-1 rounded-lg hover:bg-rose-950 text-rose-400 text-xs font-semibold transition flex items-center gap-1" title="Eliminar tots els fotogrames seleccionats (Tecla Supr)">
-            🗑️
-          </button>
+          <!-- Durada / Pausa de la targeta seleccionada -->
+          <div>
+            <label class="block text-[10px] text-slate-400 font-semibold mb-1">Pausa (Hold) de la selecció:</label>
+            <select id="frame-hold-select" onchange="setSelectedFramesHold(this.value)" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-2.5 py-1.5 text-xs font-bold text-slate-200 focus:outline-none cursor-pointer">
+              <option value="1" class="bg-slate-900">1x · Durada normal</option>
+              <option value="2" class="bg-slate-900">2x · Doble pausa</option>
+              <option value="4" class="bg-slate-900">4x · Coixí (0.5 s a 8 FPS)</option>
+              <option value="8" class="bg-slate-900">8x · Pausa 1 segon</option>
+              <option value="16" class="bg-slate-900">16x · Títol 2 segons</option>
+              <option value="24" class="bg-slate-900">24x · Títol 3 segons</option>
+            </select>
+          </div>
+
+          <!-- Accions en bloc (Moure, Invertir, Duplicar, Esborrar) -->
+          <div class="grid grid-cols-5 gap-1 pt-0.5">
+            <button onclick="moveSelectedFrames(-1)" class="py-1.5 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-slate-200 text-xs font-bold transition" title="Moure cap a l'esquerra">
+              ◀
+            </button>
+            <button onclick="moveSelectedFrames(1)" class="py-1.5 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-slate-200 text-xs font-bold transition" title="Moure cap a la dreta">
+              ▶
+            </button>
+            <button onclick="reverseSelectedFrames()" class="py-1.5 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-indigo-300 text-xs font-bold transition" title="Invertir l'ordre de les fotos seleccionades (efecte bumerang)">
+              ⇄
+            </button>
+            <button onclick="duplicateSelectedFrames()" class="py-1.5 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-amber-300 text-xs font-bold transition" title="Duplicar les targetes seleccionades">
+              x2
+            </button>
+            <button onclick="deleteSelectedFrames()" class="py-1.5 rounded-xl bg-slate-950 hover:bg-rose-950 border border-slate-800 text-rose-400 text-xs font-bold transition" title="Eliminar seleccionades (Tecla Supr)">
+              🗑️
+            </button>
+          </div>
         </div>
+
+        <!-- Targeta 3: Qualitat de Vídeo i Capacitat -->
+        <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-3 space-y-2.5 shadow-sm">
+          <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+            <span>⚙️</span> Exportació i Memòria
+          </span>
+
+          <div>
+            <label class="block text-[10px] text-slate-400 font-semibold mb-1">Qualitat d'exportació de vídeo MP4:</label>
+            <select id="video-quality-select" class="w-full bg-slate-950 border border-slate-800 text-amber-300 text-xs font-bold px-2.5 py-1.5 rounded-xl focus:outline-none cursor-pointer">
+              <option value="20000000" selected>Vídeo HQ · 20 Mbps (Nitidesa màx.)</option>
+              <option value="8000000">Vídeo Estàndard · 8 Mbps (Lleuger)</option>
+            </select>
+          </div>
+
+          <div onclick="toggleStorageModal(true)" class="bg-slate-950 hover:bg-slate-900 p-2.5 rounded-xl border border-slate-800 cursor-pointer transition space-y-1.5" title="Clica per a més detalls sobre l'emmagatzematge">
+            <div id="capacity-gauge-text" class="font-mono text-[10px] text-slate-300 leading-tight">
+              Capacitat (JPG): <strong class="text-emerald-400">0 / 1500 fotos</strong> (0.0 MB) · Màx: ~3.1 min
+            </div>
+            <div class="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
+              <div id="capacity-gauge-bar" class="h-full bg-emerald-500 rounded-full transition-all duration-300" style="width: 0%"></div>
+            </div>
+          </div>
+        </div>
+
       </div>
+    </aside>
 
-    </div>
+  </div>
 
-    <!-- Barra de Selecció Múltiple + Indicador de Capacitat i Durada Màxima + Tira de Fotogrames -->
-    <div class="relative bg-slate-950 border border-slate-800 rounded-xl p-2 space-y-1.5">
+  <!-- ==========================================
+       3. TIRA INFERIOR DE FOTOGRAMES (TIMELINE D'AMPLADA COMPLETA)
+       ========================================== -->
+  <section class="bg-slate-900 border-t border-slate-800 px-4 py-2 shrink-0 z-20">
+    <div class="bg-slate-950 border border-slate-800 rounded-xl p-2 space-y-1">
       <div class="flex flex-wrap items-center justify-between gap-2 px-1 text-[11px] text-slate-400">
-        
-        <!-- Esquerra: Selecció Múltiple -->
         <div class="flex items-center gap-2">
           <span id="selection-count-badge" class="px-2 py-0.5 rounded bg-slate-900 border border-slate-800 font-mono text-slate-300 font-semibold">
             0 seleccionades
@@ -519,29 +580,20 @@
           <button onclick="selectAllFrames()" class="hover:text-white underline decoration-slate-600 transition">Seleccionar tot</button>
           <span>·</span>
           <button onclick="clearMultiSelection()" class="hover:text-white underline decoration-slate-600 transition">Cap</button>
-          <span class="hidden lg:inline text-slate-600">|</span>
-          <span class="hidden lg:inline text-slate-500">Usa <kbd class="px-1 py-0.5 bg-slate-900 border border-slate-700 rounded text-[10px]">Ctrl+Clic</kbd> o <kbd class="px-1 py-0.5 bg-slate-900 border border-slate-700 rounded text-[10px]">Maj+Clic</kbd> per selecció múltiple</span>
+          <span class="hidden md:inline text-slate-600">|</span>
+          <span class="hidden md:inline text-slate-500">Usa <kbd class="px-1 py-0.5 bg-slate-900 border border-slate-700 rounded text-[10px]">Ctrl+Clic</kbd> o <kbd class="px-1 py-0.5 bg-slate-900 border border-slate-700 rounded text-[10px]">Maj+Clic</kbd> per selecció múltiple</span>
         </div>
-
-        <!-- Dreta: Mesurador de Capacitat i Durada Màxima Recomanada -->
-        <div onclick="toggleStorageModal(true)" class="flex items-center gap-2.5 bg-slate-900/90 hover:bg-slate-900 px-2.5 py-1 rounded-lg border border-slate-800 cursor-pointer transition" title="Capacitat recomanada per escena a l'aula: fins a 1.500 fotos (~3 minuts de vídeo a 8 FPS). Clica per a més detalls.">
-          <span id="capacity-gauge-text" class="font-mono text-[11px] text-slate-300">
-            Capacitat: <strong class="text-emerald-400">0 / 1.500 fotos</strong> (~0.0 MB) · Màx recomanat: ~3 min
-          </span>
-          <div class="w-20 h-2 bg-slate-800 rounded-full overflow-hidden p-0.2 hidden sm:block">
-            <div id="capacity-gauge-bar" class="h-full bg-emerald-500 rounded-full transition-all duration-300" style="width: 0%"></div>
-          </div>
+        <div class="text-[11px] text-slate-500 hidden sm:block">
+          Dreceres: <span class="kbd-badge">Espai</span> Capturar · <span class="kbd-badge">Enter</span> Play · <span class="kbd-badge">Tab</span> Pampalluga · <span class="kbd-badge">Ctrl+Z</span> Desfés
         </div>
-
       </div>
 
-      <div id="timeline-strip" class="timeline-scroll flex items-center gap-2 overflow-x-auto min-h-[84px] pb-1">
-        <div id="empty-timeline-msg" class="w-full py-4 text-center text-xs text-slate-500 flex items-center justify-center gap-2">
-          <span>📷 Encara no hi ha cap fotografia. Premeu <span class="kbd-badge">Espai</span> per capturar, o creeu una portada amb <strong>Títols</strong>!</span>
+      <div id="timeline-strip" class="timeline-scroll flex items-center gap-2 overflow-x-auto min-h-[78px] pb-1">
+        <div id="empty-timeline-msg" class="w-full py-3.5 text-center text-xs text-slate-500 flex items-center justify-center gap-2">
+          <span>📷 Encara no hi ha cap fotografia. Premeu <span class="kbd-badge">Espai</span> per capturar, o creeu una portada amb <strong>Títols</strong> al panell dret!</span>
         </div>
       </div>
     </div>
-
   </section>
 
   <!-- ==========================================
@@ -1627,9 +1679,11 @@
       onionEnabled = !onionEnabled;
       const btn = document.getElementById('btn-onion');
       if (onionEnabled) {
-        btn.className = 'text-xs font-bold flex items-center gap-1 text-purple-400 hover:text-purple-300 transition';
+        btn.textContent = 'Pell Ceba: ON';
+        btn.className = 'text-[11px] font-bold px-2 py-0.5 rounded-md bg-purple-500/20 text-purple-300 border border-purple-500/30 hover:bg-purple-500/30 transition';
       } else {
-        btn.className = 'text-xs font-bold flex items-center gap-1 text-slate-500 hover:text-slate-400 transition';
+        btn.textContent = 'Pell Ceba: OFF';
+        btn.className = 'text-[11px] font-bold px-2 py-0.5 rounded-md bg-slate-800 text-slate-400 border border-slate-700 hover:bg-slate-700 transition';
       }
       refreshOnionSkinOverlay();
     }
@@ -1669,13 +1723,37 @@
         blinkStateShowingLast = true;
         onionImg.style.opacity = 1.0;
 
-        btn.className = 'px-2.5 py-1.5 rounded-xl bg-amber-500 text-slate-950 font-bold text-xs transition flex items-center gap-1 shadow';
+        btn.className = 'py-1.5 px-2 rounded-xl bg-amber-500 text-slate-950 font-bold text-xs transition flex items-center justify-center gap-1 shadow';
         setStageModeBadge('PAMPALLUGA: FOTO ANTERIOR ⇄ VIU', 'amber');
 
         blinkIntervalId = setInterval(() => {
           blinkStateShowingLast = !blinkStateShowingLast;
           onionImg.style.opacity = blinkStateShowingLast ? 1.0 : 0.0;
         }, 320);
+      }
+    }
+
+    function stopBlinkMode() {
+      if (blinkIntervalId) {
+        clearInterval(blinkIntervalId);
+        blinkIntervalId = null;
+      }
+      const btn = document.getElementById('btn-blink');
+      btn.className = 'py-1.5 px-2 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-xs font-semibold text-amber-300 transition flex items-center justify-center gap-1';
+      setStageModeBadge('CÀMERA EN VIU', 'emerald');
+      refreshOnionSkinOverlay();
+    }
+
+    function toggleGrid() {
+      gridEnabled = !gridEnabled;
+      const grid = document.getElementById('grid-overlay');
+      const btn = document.getElementById('btn-grid');
+      if (gridEnabled) {
+        grid.classList.remove('hidden');
+        btn.className = 'py-1.5 px-2 rounded-xl bg-amber-500 text-slate-950 font-bold text-xs transition flex items-center justify-center gap-1';
+      } else {
+        grid.classList.add('hidden');
+        btn.className = 'py-1.5 px-2 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-xs font-semibold text-slate-300 transition flex items-center justify-center gap-1';
       }
     }
 
@@ -1834,12 +1912,13 @@
       eraserUndoStack = [eraserOriginalImageData];
       await updateEraserSource();
 
-      // Mostrar la barra externa superior i amagar el HUD flotant intern perquè tota la imatge 16:9 sigui 100% pintable!
+      // Mostrar el sub-panell de la Goma Màgica al Dock Dret: el visor 16:9 queda 100% net!
       document.getElementById('magic-eraser-toolbar').classList.remove('hidden');
-      document.getElementById('stage-top-hud').classList.add('hidden');
+      document.getElementById('chroma-panel').classList.add('hidden');
       document.getElementById('demo-banner').classList.add('hidden');
+      setStageModeBadge(`🪄 GOMA MÀGICA ACTIVA (FOTO #${targetIdx + 1})`, 'amber');
       playbackCanvas.style.cursor = 'none';
-      showToast(`🪄 Goma Màgica oberta sobre la foto #${targetIdx + 1}. Pinta sobre la imatge!`);
+      showToast(`🪄 Goma Màgica activa sobre la foto #${targetIdx + 1}. Pinta sobre el visor!`);
     }
 
     async function updateEraserSource() {
@@ -1952,7 +2031,6 @@
       eraserCursor.classList.add('hidden');
       playbackCanvas.style.cursor = 'default';
       document.getElementById('magic-eraser-toolbar').classList.add('hidden');
-      document.getElementById('stage-top-hud').classList.remove('hidden');
       if (usingDemoStage) {
         document.getElementById('demo-banner').classList.remove('hidden');
       }
