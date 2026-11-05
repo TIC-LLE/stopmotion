@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Estudi Stop-Motion d'Aula v3.0 · Captura 1080p i Exportació MP4 HQ</title>
+  <title>Estudi Stop-Motion d'Aula v3.1 · Captura 1080p i Exportació MP4 HQ</title>
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Google Fonts -->
@@ -87,13 +87,13 @@
       </div>
       <div>
         <div class="flex items-center gap-2">
-          <h1 class="font-display font-bold text-base sm:text-lg tracking-tight text-white">Estudi Stop-Motion <span class="text-amber-400">v3.0</span></h1>
+          <h1 class="font-display font-bold text-base sm:text-lg tracking-tight text-white">Estudi Stop-Motion <span class="text-amber-400">v3.1</span></h1>
           <button onclick="toggleStorageModal(true)" id="db-status-badge" class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/30 transition cursor-pointer" title="Clica per veure l'estat de la memòria, límit de fotos i còpia de seguretat">
             <span>💾 Auto-desat</span>
             <span id="capacity-top-pill" class="font-mono text-[10px] bg-slate-950/80 px-1.5 py-0.2 rounded text-emerald-300">0/1500</span>
           </button>
         </div>
-        <p class="text-[11px] text-slate-400 hidden sm:block">1080p · Exportació MP4 HQ (20 Mbps) · Desfés Ctrl+Z · GitHub Pages Ready</p>
+        <p class="text-[11px] text-slate-400 hidden sm:block">1080p · Foto JPG/PNG · Vídeo MP4 HQ (20 Mbps) · Goma Màgica Externa</p>
       </div>
     </div>
 
@@ -135,8 +135,8 @@
       </button>
     </div>
 
-    <!-- Botons de Projecte (Desar/Obrir), Qualitat Vídeo + Exportació, Pantalla Completa i Ajuda -->
-    <div class="flex items-center gap-1.5">
+    <!-- Botons de Projecte (Desar/Obrir), Qualitat Foto + Vídeo, Pantalla Completa i Ajuda -->
+    <div class="flex flex-wrap items-center gap-1.5">
       <div class="flex items-center bg-slate-950 border border-slate-700 rounded-xl p-0.5 gap-0.5">
         <button onclick="exportProjectFile()" class="px-2.5 py-1.5 rounded-lg hover:bg-slate-800 text-slate-200 font-semibold text-xs transition flex items-center gap-1" title="Desar el projecte sencer en un fitxer per guardar-lo al Drive o USB i continuar en un altre ordinador">
           <span>💾</span> <span class="hidden lg:inline">Desar</span>
@@ -147,18 +147,28 @@
         </label>
       </div>
 
+      <!-- Selector de Qualitat de Captura de Fotos (Ajusta automàticament el màxim de fotos recomanat) -->
+      <div class="flex items-center bg-slate-950 border border-slate-700 rounded-xl px-2 py-1 gap-1" title="Qualitat de compressió de les fotografies capturades (ajusta automàticament el límit recomanat de fotos)">
+        <span class="text-[11px] text-slate-400 hidden xl:inline">Foto:</span>
+        <select id="photo-quality-select" onchange="changePhotoQuality(this.value)" class="bg-transparent text-[11px] font-bold text-emerald-300 focus:outline-none cursor-pointer">
+          <option value="jpg92" selected class="bg-slate-900 text-slate-100">JPG 92% (Màx 1500)</option>
+          <option value="jpg98" class="bg-slate-900 text-amber-300">JPG 98% HQ (Màx 800)</option>
+          <option value="png100" class="bg-slate-900 text-purple-300">PNG 100% (Màx 350)</option>
+        </select>
+      </div>
+
       <!-- Grup Exportació MP4 amb Selector de Qualitat (Estàndard 8 Mbps vs HQ 20 Mbps) -->
       <div class="flex items-center bg-amber-500 rounded-xl p-0.5 shadow">
         <select id="video-quality-select" class="bg-slate-950/90 text-amber-300 text-[11px] font-bold px-2 py-1.5 rounded-l-lg focus:outline-none cursor-pointer border-r border-amber-500/40" title="Tria la qualitat i compressió del vídeo MP4 resultant">
-          <option value="20000000" selected>HQ · 20 Mbps</option>
-          <option value="8000000">Estàndard · 8 Mbps</option>
+          <option value="20000000" selected>Vídeo HQ · 20 Mbps</option>
+          <option value="8000000">Vídeo Std · 8 Mbps</option>
         </select>
         <button onclick="exportVideoMP4()" id="btn-export-mp4" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs px-2.5 py-1.5 rounded-r-lg transition flex items-center gap-1" title="Generar i descarregar l'arxiu de vídeo en alta definició">
           <span>🎞️ MP4</span>
         </button>
       </div>
 
-      <button onclick="exportFramesZIP()" id="btn-export-zip" class="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs px-2.5 py-2 rounded-xl shadow transition flex items-center gap-1" title="Descarregar totes les fotos numerades (0001.jpg, 0002.jpg...) dins d'un fitxer .ZIP per a Shotcut">
+      <button onclick="exportFramesZIP()" id="btn-export-zip" class="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs px-2.5 py-2 rounded-xl shadow transition flex items-center gap-1" title="Descarregar totes les fotos numerades (0001.jpg/.png...) dins d'un fitxer .ZIP per a Shotcut">
         <span>📦 .ZIP</span>
       </button>
 
@@ -178,12 +188,56 @@
   </header>
 
   <!-- ==========================================
+       1B. BARRA EXTERNA DEDICADA DE LA GOMA MÀGICA (FORA DEL VISOR, ZERO SOLAPAMENT AMB LA IMATGE!)
+       ========================================== -->
+  <div id="magic-eraser-toolbar" class="hidden bg-purple-950/95 border-b-2 border-purple-500 px-3 sm:px-6 py-2 shrink-0 z-30 shadow-lg">
+    <div class="max-w-6xl mx-auto flex flex-wrap items-center justify-between gap-2.5">
+      <div class="flex items-center gap-2 text-purple-200 font-display font-bold text-xs sm:text-sm">
+        <span class="px-2 py-0.5 rounded bg-purple-500 text-slate-950 font-bold text-xs">🪄 GOMA MÀGICA ACTIVA</span>
+        <span>Pinta directament sobre qualsevol punt de la imatge per esborrar mans o suports:</span>
+      </div>
+
+      <div class="flex flex-wrap items-center gap-2">
+        <div class="flex items-center gap-1.5 bg-slate-900 border border-purple-500/40 rounded-xl px-2.5 py-1 text-xs">
+          <span class="text-slate-400">Fons d'origen:</span>
+          <select id="eraser-source-select" onchange="updateEraserSource()" class="bg-transparent font-bold text-purple-300 focus:outline-none cursor-pointer">
+            <option value="ref" class="bg-slate-900">Fons Net capturat</option>
+            <option value="first" class="bg-slate-900">Fotograma #1</option>
+            <option value="prev" class="bg-slate-900">Fotograma anterior (#-1)</option>
+          </select>
+        </div>
+
+        <div class="flex items-center gap-2 bg-slate-900 border border-purple-500/40 rounded-xl px-2.5 py-1 text-xs">
+          <span class="text-slate-400">Mida pinzell:</span>
+          <input type="range" id="eraser-size-slider" min="15" max="180" value="75" oninput="updateEraserBrushSize(this.value)" class="w-20 sm:w-24 accent-purple-400 cursor-pointer">
+          <span id="eraser-size-label" class="font-mono text-[11px] text-purple-300 w-9">75px</span>
+        </div>
+
+        <div class="flex items-center gap-1.5">
+          <button onclick="undoEraserStroke()" class="px-2.5 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200 border border-slate-700 transition" title="Desfer l'última pinzellada (Ctrl+Z)">
+            ↶ Desfés pinzellada
+          </button>
+          <button onclick="restoreOriginalEraserFrame()" class="px-2.5 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-amber-300 border border-slate-700 transition" title="Deixar la foto tal com estava abans d'entrar a la Goma Màgica">
+            ↺ Restaurar foto original
+          </button>
+          <button onclick="applyMagicEraserChanges()" class="px-3.5 py-1 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-xs font-bold text-white shadow transition">
+            ✅ Aplicar i Sortir
+          </button>
+          <button onclick="closeMagicEraser(true)" class="px-2.5 py-1 rounded-xl bg-slate-800 hover:bg-rose-950 text-xs font-semibold text-slate-300 hover:text-rose-300 transition">
+            ✕ Cancel·lar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==========================================
        2. VISOR CENTRAL (CÀMERA EN VIU + CROMA + GOMA MÀGICA + PELL DE CEBA)
        ========================================== -->
-  <main class="flex-1 relative flex items-center justify-center bg-slate-950 p-2 sm:p-3 overflow-hidden">
+  <main class="flex-1 min-h-0 relative flex items-center justify-center bg-slate-950 p-2 sm:p-3 overflow-hidden">
     
-    <!-- Contenidor 16:9 del Visor -->
-    <div id="stage-container" class="relative w-full max-w-5xl aspect-video bg-black rounded-2xl overflow-hidden shadow-2xl border-2 border-slate-800 flex items-center justify-center">
+    <!-- Contenidor 16:9 del Visor (S'adapta automàticament en alçada i amplada sense tapar cap cantó) -->
+    <div id="stage-container" class="relative w-full h-full max-w-5xl max-h-full aspect-video bg-black rounded-2xl overflow-hidden shadow-2xl border-2 border-slate-800 flex items-center justify-center">
       
       <!-- Flux de Vídeo Real de la Webcam -->
       <video id="webcam-video" autoplay playsinline muted class="w-full h-full object-contain"></video>
@@ -195,16 +249,16 @@
       <canvas id="live-chroma-canvas" width="1920" height="1080" class="hidden w-full h-full object-contain"></canvas>
 
       <!-- Capa de Pell de Ceba (Onion Skin) i Pampalluga -->
-      <img id="onion-skin-img" alt="Pell de ceba" class="hidden pointer-events-none absolute inset-0 w-full h-full object-contain transition-opacity duration-75" style="opacity: 0.45;" />
+      <img id="onion-skin-img" alt="Pell de ceba" class="hidden pointer-events-none absolute inset-0 w-full h-full object-contain transition-opacity duration-75 z-10" style="opacity: 0.45;" />
 
-      <!-- Capa de Reproducció / Previsualització / Goma Màgica -->
-      <canvas id="playback-canvas" width="1920" height="1080" class="hidden absolute inset-0 w-full h-full object-contain bg-black"></canvas>
+      <!-- Capa de Reproducció / Previsualització / Goma Màgica (z-30 perquè es vegi sempre per sobre del vídeo en fer Play!) -->
+      <canvas id="playback-canvas" width="1920" height="1080" class="hidden absolute inset-0 w-full h-full object-contain bg-black z-30"></canvas>
 
       <!-- Cursor Circular del Pinzell de la Goma Màgica -->
       <div id="eraser-cursor" class="hidden pointer-events-none fixed z-50 rounded-full border-2 border-amber-400 bg-amber-400/20 shadow-[0_0_12px_rgba(245,158,11,0.8)] -translate-x-1/2 -translate-y-1/2"></div>
 
       <!-- Quadrícula de Regla dels Terços (Opcional) -->
-      <div id="grid-overlay" class="hidden pointer-events-none absolute inset-0">
+      <div id="grid-overlay" class="hidden pointer-events-none absolute inset-0 z-30">
         <div class="w-full h-full grid grid-cols-3 grid-rows-3">
           <div class="border-r border-b border-amber-400/35"></div>
           <div class="border-r border-b border-amber-400/35"></div>
@@ -221,10 +275,10 @@
       </div>
 
       <!-- Flash blanc de captura -->
-      <div id="shutter-flash" class="pointer-events-none absolute inset-0 bg-white opacity-0"></div>
+      <div id="shutter-flash" class="pointer-events-none absolute inset-0 bg-white opacity-0 z-40"></div>
 
       <!-- Compte enrere gran per a l'Autodisparador -->
-      <div id="countdown-overlay" class="hidden pointer-events-none absolute inset-0 bg-slate-950/35 backdrop-blur-[1px] flex flex-col items-center justify-center">
+      <div id="countdown-overlay" class="hidden pointer-events-none absolute inset-0 bg-slate-950/35 backdrop-blur-[1px] flex flex-col items-center justify-center z-40">
         <div class="w-36 h-36 rounded-full border-4 border-amber-400 bg-slate-900/80 flex items-center justify-center shadow-2xl">
           <span id="countdown-number" class="font-display font-bold text-7xl sm:text-8xl text-amber-400">3</span>
         </div>
@@ -233,8 +287,8 @@
         </span>
       </div>
 
-      <!-- BARRA FLOTANT SUPERIOR DINS DEL VISOR -->
-      <div class="absolute top-3 left-3 right-3 flex flex-wrap items-center justify-between gap-2 pointer-events-none z-20">
+      <!-- BARRA FLOTANT SUPERIOR DINS DEL VISOR (s'amaga quan la Goma Màgica està activa perquè la imatge quedi 100% lliure!) -->
+      <div id="stage-top-hud" class="absolute top-3 left-3 right-3 flex flex-wrap items-center justify-between gap-2 pointer-events-none z-40">
         
         <div class="flex flex-wrap items-center gap-2 pointer-events-auto">
           <div id="mode-pill" class="px-3 py-1 rounded-full bg-slate-900/90 border border-slate-700 backdrop-blur text-xs font-bold flex items-center gap-2 text-emerald-400 shadow">
@@ -260,42 +314,8 @@
         </div>
       </div>
 
-      <!-- PANELL FLOTANT DE LA GOMA MÀGICA / MASKING -->
-      <div id="magic-eraser-toolbar" class="hidden absolute bottom-3 left-1/2 -translate-x-1/2 z-30 bg-slate-900/95 border-2 border-purple-500 rounded-2xl px-4 py-2.5 shadow-2xl flex flex-wrap items-center gap-3 max-w-[95%]">
-        <div class="flex items-center gap-2 text-purple-300 font-display font-bold text-xs">
-          <span>🪄 Goma Màgica (Pinta sobre la mà o suport per esborrar-lo):</span>
-        </div>
-
-        <div class="flex items-center gap-1 bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-1 text-xs">
-          <span class="text-slate-400">Origen:</span>
-          <select id="eraser-source-select" onchange="updateEraserSource()" class="bg-transparent font-semibold text-purple-300 focus:outline-none cursor-pointer">
-            <option value="ref" class="bg-slate-900">Fons Net de Referència</option>
-            <option value="prev" class="bg-slate-900">Fotograma Anterior (#-1)</option>
-            <option value="first" class="bg-slate-900">Fotograma #1</option>
-          </select>
-        </div>
-
-        <div class="flex items-center gap-2 bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-1 text-xs">
-          <span class="text-slate-400">Pinzell:</span>
-          <input type="range" id="eraser-size-slider" min="15" max="220" value="75" oninput="updateEraserBrushSize(this.value)" class="w-20 accent-purple-500 cursor-pointer">
-          <span id="eraser-size-label" class="font-mono text-[11px] text-purple-300 w-9">75px</span>
-        </div>
-
-        <div class="flex items-center gap-1.5">
-          <button onclick="undoEraserStroke()" class="px-2.5 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200 border border-slate-700 transition">
-            ↶ Desfer
-          </button>
-          <button onclick="applyMagicEraserChanges()" class="px-3 py-1 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-xs font-bold text-white shadow transition">
-            ✓ Aplicar i Desar
-          </button>
-          <button onclick="closeMagicEraser(true)" class="px-2.5 py-1 rounded-xl bg-slate-800 hover:bg-rose-950 text-xs font-semibold text-slate-300 hover:text-rose-300 transition">
-            Cancel·lar
-          </button>
-        </div>
-      </div>
-
       <!-- PANELL FLOTANT DE CROMA EN VIU -->
-      <div id="chroma-panel" class="hidden absolute top-14 right-3 z-30 w-80 bg-slate-900/95 border border-emerald-500/50 backdrop-blur-md rounded-2xl p-4 shadow-2xl space-y-3 text-xs">
+      <div id="chroma-panel" class="hidden absolute top-14 right-3 z-40 w-80 bg-slate-900/95 border border-emerald-500/50 backdrop-blur-md rounded-2xl p-4 shadow-2xl space-y-3 text-xs">
         <div class="flex items-center justify-between border-b border-slate-800 pb-2">
           <div class="flex items-center gap-2 font-display font-bold text-sm text-emerald-400">
             <span>🟩 Estudi de Croma en Viu</span>
@@ -386,6 +406,27 @@
         </div>
 
         <!-- Botó Pampalluga (Tab) -->
+        <button onclick="toggleBlinkMode()" id="btn-blink" class="px-2.5 py-1.5 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-xs font-semibold text-amber-300 transition flex items-center gap-1" title="Alternar ràpidament entre l'última foto i la càmera en viu (Tecla Tab)">
+          <span>👁️</span> <span class="hidden lg:inline">Pampalluga</span>
+        </button>
+
+        <!-- Botó Quadrícula (G) -->
+        <button onclick="toggleGrid()" id="btn-grid" class="px-2.5 py-1.5 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-xs font-semibold text-slate-300 transition flex items-center gap-1" title="Mostrar/Amagar la quadrícula dels terços (Tecla G)">
+          <span>#</span> <span class="hidden lg:inline">Quadrícula</span>
+        </button>
+
+        <!-- Selector d'Autodisparador / Intervalòmetre -->
+        <div class="flex items-center gap-1 bg-slate-950 border border-slate-800 px-2.5 py-1.5 rounded-xl" title="Autodisparador automàtic amb avís sonor">
+          <span class="text-xs">⏱️</span>
+          <select id="interval-select" onchange="setIntervalTimer(this.value)" class="bg-transparent text-xs font-semibold text-slate-300 focus:outline-none cursor-pointer">
+            <option value="0" class="bg-slate-900">Manual</option>
+            <option value="3" class="bg-slate-900">Cada 3 s</option>
+            <option value="5" class="bg-slate-900">Cada 5 s</option>
+            <option value="10" class="bg-slate-900">Cada 10 s</option>
+          </select>
+        </div>
+      </div>
+
       <!-- Centre: Pausa per Fotograma (Hold), +4 Coixí, Captura i Play -->
       <div class="flex items-center gap-2 mx-auto sm:mx-0">
         
@@ -566,6 +607,10 @@
             ⏭ Inserir al Final (1 Targeta)
           </button>
         </div>
+      </div>
+    </div>
+  </div>
+
   <!-- MODAL D'EMMAGATZEMATGE, CAPACITAT MÀXIMA I BACKUP DE PROJECTE -->
   <div id="storage-info-modal" class="fixed inset-0 z-50 hidden bg-slate-950/85 backdrop-blur-sm flex items-center justify-center p-4">
     <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4">
@@ -699,11 +744,16 @@
   <canvas id="chroma-bg-canvas" width="1920" height="1080" class="hidden"></canvas>
 
   <!-- ==========================================
-       5. MOTOR JAVASCRIPT DE L'APLICACIÓ (VERSIÓ 3.0 - GITHUB PAGES READY)
+       5. MOTOR JAVASCRIPT DE L'APLICACIÓ (VERSIÓ 3.1 - GITHUB PAGES READY)
        ========================================== -->
   <script>
-    // ESTAT GLOBAL DE L'ESTUDI
-    const MAX_RECOMMENDED_FRAMES = 1500;
+    // ESTAT GLOBAL DE L'ESTUDI I SELECTOR DE QUALITAT DE FOTO
+    const PHOTO_QUALITY_PRESETS = {
+      jpg92: { mime: 'image/jpeg', quality: 0.92, maxFrames: 1500, avgBytes: 250000, ext: 'jpg', label: 'JPG 92% (Estàndard)' },
+      jpg98: { mime: 'image/jpeg', quality: 0.98, maxFrames: 800,  avgBytes: 550000, ext: 'jpg', label: 'JPG 98% (Alta Qualitat)' },
+      png100: { mime: 'image/png', quality: 1.0,  maxFrames: 350,  avgBytes: 1800000, ext: 'png', label: 'PNG 100% (Sense compressió)' }
+    };
+    let currentPhotoQualityKey = 'jpg92';
     let frames = [];
     let timelineUndoStack = [];
     let referenceBgBlob = null;
@@ -748,6 +798,7 @@
     let eraserBrushSize = 75;
     let eraserDrawing = false;
     let eraserReferenceImage = null;
+    let eraserOriginalImageData = null;
     let eraserUndoStack = [];
 
     // Elements del DOM
@@ -768,8 +819,30 @@
     const eraserCursor = document.getElementById('eraser-cursor');
 
     // ==========================================
-    // A. UTILITATS DE MEMÒRIA (BLOBS 1080P + MINIATURES 160x90)
+    // A. UTILITATS DE MEMÒRIA (BLOBS 1080P + IMATGES EN CACHÉ PER A PLAYBACK INSTANTANI)
     // ==========================================
+    function getMaxRecommendedFrames() {
+      const preset = PHOTO_QUALITY_PRESETS[currentPhotoQualityKey] || PHOTO_QUALITY_PRESETS.jpg92;
+      return preset.maxFrames;
+    }
+
+    function changePhotoQuality(qualityKey) {
+      if (!PHOTO_QUALITY_PRESETS[qualityKey]) return;
+      currentPhotoQualityKey = qualityKey;
+      const preset = PHOTO_QUALITY_PRESETS[qualityKey];
+      updateHUD();
+      saveProjectToDB();
+      const maxSecs = Math.round(preset.maxFrames / projectFPS);
+      showToast(`Qualitat de foto: ${preset.label} · Màxim suggerit: ${preset.maxFrames} fotos (~${maxSecs} s)`);
+    }
+
+    function canvasToBlobWithCurrentPreset(canvasEl) {
+      const preset = PHOTO_QUALITY_PRESETS[currentPhotoQualityKey] || PHOTO_QUALITY_PRESETS.jpg92;
+      return new Promise((resolve) => {
+        canvasEl.toBlob((blob) => resolve(blob), preset.mime, preset.quality);
+      });
+    }
+
     function canvasToBlob(canvasEl, quality = 0.92) {
       return new Promise((resolve) => {
         canvasEl.toBlob((blob) => resolve(blob), 'image/jpeg', quality);
@@ -789,6 +862,24 @@
         img.onerror = (e) => reject(e);
         img.src = url;
       });
+    }
+
+    // Assegura que cada fotograma tingui el seu HTMLImageElement pre-descodificat en memòria per a un Play 100% síncron
+    async function ensureFrameImageCached(frameObj) {
+      if (!frameObj) return null;
+      if (frameObj.cachedImg && frameObj.cachedImg.complete && frameObj.cachedImg.naturalWidth > 0) {
+        return frameObj.cachedImg;
+      }
+      if (!frameObj.fullUrl && frameObj.fullBlob) {
+        frameObj.fullUrl = URL.createObjectURL(frameObj.fullBlob);
+      }
+      try {
+        const img = await loadImageFromUrl(frameObj.fullUrl);
+        frameObj.cachedImg = img;
+        return img;
+      } catch (e) {
+        return null;
+      }
     }
 
     function revokeFrameUrls(frameObj) {
@@ -817,17 +908,24 @@
       if (btn) btn.disabled = timelineUndoStack.length === 0;
     }
 
-    function undoLastTimelineAction() {
+    async function undoLastTimelineAction() {
       if (timelineUndoStack.length === 0) {
         showToast('No hi ha cap acció recent per desfer', true);
         return;
       }
+      if (isPlaying) stopPlayback();
       frames.forEach(f => revokeFrameUrls(f));
       const restored = timelineUndoStack.pop();
-      frames = restored.map(f => ({
-        ...f,
-        fullUrl: URL.createObjectURL(f.fullBlob)
-      }));
+      frames = restored.map(f => {
+        const url = URL.createObjectURL(f.fullBlob);
+        const img = new Image();
+        img.src = url;
+        return {
+          ...f,
+          fullUrl: url,
+          cachedImg: img
+        };
+      });
       selectedFrameIndex = frames.length - 1;
       selectedIndices = selectedFrameIndex >= 0 ? new Set([selectedFrameIndex]) : new Set();
       updateUndoButtonState();
@@ -942,6 +1040,7 @@
           frames: storedFrames,
           referenceBgBlob: referenceBgBlob,
           fps: projectFPS,
+          photoQuality: currentPhotoQualityKey,
           updatedAt: Date.now()
         });
       } catch (e) {}
@@ -1625,14 +1724,17 @@
         drawRawCameraToContext(offscreenCtx);
       }
 
-      const fullBlob = await canvasToBlob(offscreenCanvas, 0.92);
+      const fullBlob = await canvasToBlobWithCurrentPreset(offscreenCanvas);
       const fullUrl = URL.createObjectURL(fullBlob);
       const thumbUrl = generateThumbnailFromCanvas(offscreenCanvas);
+      const cachedImg = new Image();
+      cachedImg.src = fullUrl;
 
       const newFrame = {
         id: 'fr_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
         fullBlob: fullBlob,
         fullUrl: fullUrl,
+        cachedImg: cachedImg,
         thumbUrl: thumbUrl,
         hold: 1,
         isTitle: false,
@@ -1683,7 +1785,7 @@
     }
 
     // ==========================================
-    // J. GOMA MÀGICA / MASKING PER ESBORRAR MANS I SUPORTS
+    // J. GOMA MÀGICA / MASKING (BARRA EXTERNA SENSE SOLAPAR LA IMATGE)
     // ==========================================
     async function captureReferenceBackground() {
       if (usingDemoStage) {
@@ -1697,7 +1799,7 @@
       }
 
       if (referenceBgUrl) URL.revokeObjectURL(referenceBgUrl);
-      referenceBgBlob = await canvasToBlob(offscreenCanvas, 0.92);
+      referenceBgBlob = await canvasToBlobWithCurrentPreset(offscreenCanvas);
       referenceBgUrl = URL.createObjectURL(referenceBgBlob);
 
       document.getElementById('bg-ref-label').innerHTML = '🪄 Fons Net Capturat ✓';
@@ -1722,19 +1824,22 @@
         await captureReferenceBackground();
       }
 
-      const frameImg = await loadImageFromUrl(frames[targetIdx].fullUrl);
+      const frameImg = await ensureFrameImageCached(frames[targetIdx]);
       playbackCtx.clearRect(0, 0, 1920, 1080);
-      playbackCtx.drawImage(frameImg, 0, 0, 1920, 1080);
+      if (frameImg) playbackCtx.drawImage(frameImg, 0, 0, 1920, 1080);
       playbackCanvas.classList.remove('hidden');
       onionImg.classList.add('hidden');
 
-      eraserUndoStack = [playbackCtx.getImageData(0, 0, 1920, 1080)];
+      eraserOriginalImageData = playbackCtx.getImageData(0, 0, 1920, 1080);
+      eraserUndoStack = [eraserOriginalImageData];
       await updateEraserSource();
 
+      // Mostrar la barra externa superior i amagar el HUD flotant intern perquè tota la imatge 16:9 sigui 100% pintable!
       document.getElementById('magic-eraser-toolbar').classList.remove('hidden');
-      document.getElementById('btn-return-live').classList.remove('hidden');
-      setStageModeBadge(`🪄 GOMA MÀGICA (TARGETA #${targetIdx + 1})`, 'amber');
+      document.getElementById('stage-top-hud').classList.add('hidden');
+      document.getElementById('demo-banner').classList.add('hidden');
       playbackCanvas.style.cursor = 'none';
+      showToast(`🪄 Goma Màgica oberta sobre la foto #${targetIdx + 1}. Pinta sobre la imatge!`);
     }
 
     async function updateEraserSource() {
@@ -1773,7 +1878,7 @@
       if (!isMagicEraserActive) return;
       eraserDrawing = true;
       eraserUndoStack.push(playbackCtx.getImageData(0, 0, 1920, 1080));
-      if (eraserUndoStack.length > 10) eraserUndoStack.shift();
+      if (eraserUndoStack.length > 15) eraserUndoStack.shift();
       const pos = getStagePointerPos(e, playbackCanvas);
       paintEraserAt(pos.x, pos.y);
     });
@@ -1806,6 +1911,16 @@
       if (eraserUndoStack.length > 0) {
         const prevData = eraserUndoStack.pop();
         playbackCtx.putImageData(prevData, 0, 0);
+      } else {
+        showToast('No hi ha més pinzellades per desfer', true);
+      }
+    }
+
+    function restoreOriginalEraserFrame() {
+      if (eraserOriginalImageData) {
+        eraserUndoStack.push(playbackCtx.getImageData(0, 0, 1920, 1080));
+        playbackCtx.putImageData(eraserOriginalImageData, 0, 0);
+        showToast('Foto restaurada a l\'estat original');
       }
     }
 
@@ -1814,16 +1929,21 @@
       const targetFrame = frames[selectedFrameIndex];
       revokeFrameUrls(targetFrame);
 
-      const newBlob = await canvasToBlob(playbackCanvas, 0.92);
+      const newBlob = await canvasToBlobWithCurrentPreset(playbackCanvas);
+      const newUrl = URL.createObjectURL(newBlob);
+      const cachedImg = new Image();
+      cachedImg.src = newUrl;
+
       targetFrame.fullBlob = newBlob;
-      targetFrame.fullUrl = URL.createObjectURL(newBlob);
+      targetFrame.fullUrl = newUrl;
+      targetFrame.cachedImg = cachedImg;
       targetFrame.thumbUrl = generateThumbnailFromCanvas(playbackCanvas);
 
       closeMagicEraser(false);
       updateTimelineUI(false);
       refreshOnionSkinOverlay();
       saveProjectToDB();
-      showToast(`Targeta #${selectedFrameIndex + 1} actualitzada amb la Goma Màgica!`);
+      showToast(`✅ Targeta #${selectedFrameIndex + 1} actualitzada amb la Goma Màgica!`);
     }
 
     function closeMagicEraser(revert) {
@@ -1832,8 +1952,14 @@
       eraserCursor.classList.add('hidden');
       playbackCanvas.style.cursor = 'default';
       document.getElementById('magic-eraser-toolbar').classList.add('hidden');
+      document.getElementById('stage-top-hud').classList.remove('hidden');
+      if (usingDemoStage) {
+        document.getElementById('demo-banner').classList.remove('hidden');
+      }
       if (revert && selectedFrameIndex >= 0 && frames[selectedFrameIndex]) {
         inspectFrame(selectedFrameIndex);
+      } else if (!revert) {
+        returnToLiveMode();
       }
     }
 
@@ -1926,19 +2052,24 @@
       }
 
       drawTitleCardToContext(offscreenCtx, mainText, subText, theme);
-      const cardBlob = await canvasToBlob(offscreenCanvas, 0.92);
+      const cardBlob = await canvasToBlobWithCurrentPreset(offscreenCtx.canvas);
+      const fullUrl = URL.createObjectURL(cardBlob);
+      const cachedImg = new Image();
+      cachedImg.src = fullUrl;
       const thumbUrl = generateThumbnailFromCanvas(offscreenCanvas);
 
       const singleTitleCard = {
         id: 'title_' + Date.now(),
         fullBlob: cardBlob,
-        fullUrl: URL.createObjectURL(cardBlob),
+        fullUrl: fullUrl,
+        cachedImg: cachedImg,
         thumbUrl: thumbUrl,
         hold: holdFrames,
         isTitle: true,
         timestamp: Date.now()
       };
 
+      pushTimelineUndoSnapshot();
       if (position === 'start') {
         frames.unshift(singleTitleCard);
         selectedFrameIndex = 0;
@@ -2155,11 +2286,16 @@
       document.getElementById('hud-frame-info').innerHTML = `Targeta: <strong class="text-amber-400">${currentDisplay} / ${totalCards}</strong>`;
       document.getElementById('hud-time-info').innerHTML = `Durada: <strong class="text-emerald-400">${durationSec} s</strong> (${projectFPS} FPS)`;
 
-      // Actualitzar el mesurador de capacitat i MB estimats
-      const totalBytes = frames.reduce((acc, f) => acc + (f.fullBlob ? f.fullBlob.size : 250000), 0);
+      // Actualitzar el mesurador de capacitat i durada màxima segons la qualitat de foto seleccionada
+      const preset = PHOTO_QUALITY_PRESETS[currentPhotoQualityKey] || PHOTO_QUALITY_PRESETS.jpg92;
+      const maxRecommended = preset.maxFrames;
+      const totalBytes = frames.reduce((acc, f) => acc + (f.fullBlob ? f.fullBlob.size : preset.avgBytes), 0);
       const totalMB = (totalBytes / (1024 * 1024)).toFixed(1);
-      const pct = Math.min(100, Math.round((totalCards / MAX_RECOMMENDED_FRAMES) * 100));
-      const maxMinApprox = Math.round((MAX_RECOMMENDED_FRAMES / projectFPS) / 60);
+      const pct = Math.min(100, Math.round((totalCards / maxRecommended) * 100));
+      const maxTotalSec = Math.round(maxRecommended / projectFPS);
+      const maxDurationLabel = maxTotalSec >= 90
+        ? `~${(maxTotalSec / 60).toFixed(1)} min`
+        : `~${maxTotalSec} s`;
 
       const topPill = document.getElementById('capacity-top-pill');
       const gaugeText = document.getElementById('capacity-gauge-text');
@@ -2167,20 +2303,20 @@
 
       let colorClass = 'text-emerald-400';
       let barColor = 'bg-emerald-500';
-      if (totalCards > 1200) {
+      if (pct >= 85) {
         colorClass = 'text-rose-400';
         barColor = 'bg-rose-500';
-      } else if (totalCards > 800) {
+      } else if (pct >= 55) {
         colorClass = 'text-amber-400';
         barColor = 'bg-amber-500';
       }
 
       if (topPill) {
-        topPill.textContent = `${totalCards}/${MAX_RECOMMENDED_FRAMES}`;
+        topPill.textContent = `${totalCards}/${maxRecommended}`;
         topPill.className = `font-mono text-[10px] bg-slate-950/80 px-1.5 py-0.2 rounded ${colorClass}`;
       }
       if (gaugeText) {
-        gaugeText.innerHTML = `Capacitat: <strong class="${colorClass}">${totalCards} / ${MAX_RECOMMENDED_FRAMES} fotos</strong> (~${totalMB} MB) · Màx recomanat: ~${maxMinApprox} min`;
+        gaugeText.innerHTML = `Capacitat (${preset.ext.toUpperCase()}): <strong class="${colorClass}">${totalCards} / ${maxRecommended} fotos</strong> (${totalMB} MB) · Màx recomanat: ${maxDurationLabel}`;
       }
       if (gaugeBar) {
         gaugeBar.style.width = `${pct}%`;
@@ -2200,9 +2336,9 @@
       }
       isInspectingFrame = true;
 
-      const img = await loadImageFromUrl(frames[index].fullUrl);
+      const img = await ensureFrameImageCached(frames[index]);
       playbackCtx.clearRect(0, 0, 1920, 1080);
-      playbackCtx.drawImage(img, 0, 0, 1920, 1080);
+      if (img) playbackCtx.drawImage(img, 0, 0, 1920, 1080);
       playbackCanvas.classList.remove('hidden');
       onionImg.classList.add('hidden');
 
@@ -2304,10 +2440,14 @@
       const insertPos = targets[targets.length - 1] + 1;
       const copies = targets.map(idx => {
         const src = frames[idx];
+        const newUrl = URL.createObjectURL(src.fullBlob);
+        const cachedImg = new Image();
+        cachedImg.src = newUrl;
         return {
           id: 'fr_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
           fullBlob: src.fullBlob,
-          fullUrl: URL.createObjectURL(src.fullBlob),
+          fullUrl: newUrl,
+          cachedImg: cachedImg,
           thumbUrl: src.thumbUrl,
           hold: src.hold || 1,
           isTitle: !!src.isTitle,
@@ -2378,6 +2518,111 @@
       projectFPS = parseInt(val, 10);
       updateTimelineUI(false);
       saveProjectToDB();
+    }
+
+    // ==========================================
+    // N. MOTOR DE REPRODUCCIÓ (PLAY / PAUSA) 100% SÍNCRON I FLUID
+    // ==========================================
+    async function togglePlayback() {
+      if (isPlaying) {
+        stopPlayback();
+        returnToLiveMode();
+      } else {
+        await startPlayback();
+      }
+    }
+
+    async function startPlayback() {
+      if (frames.length === 0) {
+        showToast('Fes almenys 1 foto abans de reproduir!', true);
+        return;
+      }
+      if (blinkIntervalId) stopBlinkMode();
+      if (isMagicEraserActive) closeMagicEraser(false);
+
+      // Pre-carregar en memòria totes les imatges si alguna encara no està en caché
+      await Promise.all(frames.map(f => ensureFrameImageCached(f)));
+
+      isPlaying = true;
+      isInspectingFrame = false;
+      currentPlaybackIndex = 0;
+      currentPlaybackHoldRemaining = frames[0].hold || 1;
+      lastPlaybackTime = performance.now();
+
+      playbackCanvas.classList.remove('hidden');
+      onionImg.classList.add('hidden');
+      document.getElementById('btn-return-live').classList.remove('hidden');
+
+      const playBtn = document.getElementById('btn-play');
+      playBtn.className = 'px-4 py-2 rounded-2xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-display font-bold text-sm sm:text-base shadow-lg shadow-amber-500/25 transition flex items-center gap-2';
+      document.getElementById('play-icon').textContent = '⏹';
+      document.getElementById('play-text').textContent = 'Aturar';
+
+      setStageModeBadge(`🔴 REPRODUINT (${projectFPS} FPS)`, 'amber');
+      renderPlaybackFrameSync(currentPlaybackIndex);
+      playbackAnimationId = requestAnimationFrame(playbackLoop);
+    }
+
+    function renderPlaybackFrameSync(idx) {
+      if (idx < 0 || idx >= frames.length) return;
+      const frame = frames[idx];
+      if (frame && frame.cachedImg && frame.cachedImg.complete) {
+        playbackCtx.fillStyle = '#000000';
+        playbackCtx.fillRect(0, 0, 1920, 1080);
+        playbackCtx.drawImage(frame.cachedImg, 0, 0, 1920, 1080);
+      }
+      highlightPlayingThumbnail(idx);
+      updateHUD();
+    }
+
+    function highlightPlayingThumbnail(activeIdx) {
+      frames.forEach((_, idx) => {
+        const card = document.getElementById(`thumb-card-${idx}`);
+        if (!card) return;
+        if (idx === activeIdx) {
+          card.classList.add('ring-2', 'ring-emerald-400', 'border-emerald-400', 'scale-[1.03]');
+        } else {
+          card.classList.remove('ring-2', 'ring-emerald-400', 'border-emerald-400', 'scale-[1.03]');
+        }
+      });
+      const activeEl = document.getElementById(`thumb-card-${activeIdx}`);
+      if (activeEl) {
+        activeEl.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
+      }
+    }
+
+    function playbackLoop(timestamp) {
+      if (!isPlaying) return;
+      const frameInterval = 1000 / projectFPS;
+
+      if (timestamp - lastPlaybackTime >= frameInterval) {
+        lastPlaybackTime = timestamp;
+        currentPlaybackHoldRemaining--;
+
+        if (currentPlaybackHoldRemaining <= 0) {
+          currentPlaybackIndex = (currentPlaybackIndex + 1) % frames.length;
+          currentPlaybackHoldRemaining = frames[currentPlaybackIndex].hold || 1;
+          renderPlaybackFrameSync(currentPlaybackIndex);
+        }
+      }
+      playbackAnimationId = requestAnimationFrame(playbackLoop);
+    }
+
+    function stopPlayback() {
+      isPlaying = false;
+      if (playbackAnimationId) {
+        cancelAnimationFrame(playbackAnimationId);
+        playbackAnimationId = null;
+      }
+      const playBtn = document.getElementById('btn-play');
+      if (playBtn) {
+        playBtn.className = 'px-4 py-2 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-display font-bold text-sm sm:text-base shadow-lg shadow-emerald-600/20 transition flex items-center gap-2';
+      }
+      const playIcon = document.getElementById('play-icon');
+      const playText = document.getElementById('play-text');
+      if (playIcon) playIcon.textContent = '▶';
+      if (playText) playText.textContent = 'Play';
+      updateTimelineUI(false);
     }
 
     // ==========================================
@@ -2572,13 +2817,15 @@
       const files = [];
       let seqNumber = 1;
       for (let idx = 0; idx < frames.length; idx++) {
-        const arrayBuf = await frames[idx].fullBlob.arrayBuffer();
+        const blob = frames[idx].fullBlob;
+        const ext = (blob && blob.type === 'image/png') ? 'png' : 'jpg';
+        const arrayBuf = await blob.arrayBuffer();
         const bytes = new Uint8Array(arrayBuf);
         const holdTicks = frames[idx].hold || 1;
         for (let h = 0; h < holdTicks; h++) {
           const num = String(seqNumber).padStart(4, '0');
           files.push({
-            name: `${num}.jpg`,
+            name: `${num}.${ext}`,
             data: bytes
           });
           seqNumber++;
@@ -2607,19 +2854,22 @@
       const encoder = new TextEncoder();
       const files = [];
       const manifest = {
-        version: '2.6',
+        version: '3.1',
         fps: projectFPS,
+        photoQuality: currentPhotoQualityKey,
         hasRefBg: !!referenceBgBlob,
         frames: []
       };
 
       for (let i = 0; i < frames.length; i++) {
         const f = frames[i];
-        const fileName = `card_${String(i + 1).padStart(4, '0')}.jpg`;
+        const ext = (f.fullBlob && f.fullBlob.type === 'image/png') ? 'png' : 'jpg';
+        const fileName = `card_${String(i + 1).padStart(4, '0')}.${ext}`;
         const buf = await f.fullBlob.arrayBuffer();
         files.push({ name: fileName, data: new Uint8Array(buf) });
         manifest.frames.push({
           file: fileName,
+          mime: f.fullBlob ? f.fullBlob.type : 'image/jpeg',
           hold: f.hold || 1,
           isTitle: !!f.isTitle,
           timestamp: f.timestamp
@@ -2683,7 +2933,8 @@
         for (const item of manifest.frames) {
           const imgBytes = extracted[item.file];
           if (!imgBytes) continue;
-          const blob = new Blob([imgBytes], { type: 'image/jpeg' });
+          const mimeType = item.mime || (item.file.endsWith('.png') ? 'image/png' : 'image/jpeg');
+          const blob = new Blob([imgBytes], { type: mimeType });
           const fullUrl = URL.createObjectURL(blob);
           const img = await loadImageFromUrl(fullUrl);
           offscreenCtx.drawImage(img, 0, 0, 1920, 1080);
@@ -2693,6 +2944,7 @@
             id: 'fr_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
             fullBlob: blob,
             fullUrl: fullUrl,
+            cachedImg: img,
             thumbUrl: thumbUrl,
             hold: item.hold || 1,
             isTitle: !!item.isTitle,
@@ -2709,6 +2961,11 @@
 
         projectFPS = manifest.fps || 8;
         document.getElementById('fps-select').value = String(projectFPS);
+        if (manifest.photoQuality && PHOTO_QUALITY_PRESETS[manifest.photoQuality]) {
+          currentPhotoQualityKey = manifest.photoQuality;
+          const qSel = document.getElementById('photo-quality-select');
+          if (qSel) qSel.value = currentPhotoQualityKey;
+        }
         selectedFrameIndex = frames.length - 1;
         selectedIndices = selectedFrameIndex >= 0 ? new Set([selectedFrameIndex]) : new Set();
 
@@ -2834,21 +3091,32 @@
       await initIndexedDB();
       const saved = await loadProjectFromDB();
       if (saved) {
+        if (saved.photoQuality && PHOTO_QUALITY_PRESETS[saved.photoQuality]) {
+          currentPhotoQualityKey = saved.photoQuality;
+          const qSel = document.getElementById('photo-quality-select');
+          if (qSel) qSel.value = currentPhotoQualityKey;
+        }
         if (saved.referenceBgBlob) {
           referenceBgBlob = saved.referenceBgBlob;
           referenceBgUrl = URL.createObjectURL(referenceBgBlob);
           document.getElementById('bg-ref-label').innerHTML = '🪄 Fons Net Capturat ✓';
         }
         if (Array.isArray(saved.frames) && saved.frames.length > 0) {
-          frames = saved.frames.map(f => ({
-            id: f.id,
-            fullBlob: f.fullBlob,
-            fullUrl: URL.createObjectURL(f.fullBlob),
-            thumbUrl: f.thumbUrl,
-            hold: f.hold || 1,
-            isTitle: !!f.isTitle,
-            timestamp: f.timestamp
-          }));
+          frames = saved.frames.map(f => {
+            const url = URL.createObjectURL(f.fullBlob);
+            const cachedImg = new Image();
+            cachedImg.src = url;
+            return {
+              id: f.id,
+              fullBlob: f.fullBlob,
+              fullUrl: url,
+              cachedImg: cachedImg,
+              thumbUrl: f.thumbUrl,
+              hold: f.hold || 1,
+              isTitle: !!f.isTitle,
+              timestamp: f.timestamp
+            };
+          });
           projectFPS = saved.fps || 8;
           document.getElementById('fps-select').value = String(projectFPS);
           selectedFrameIndex = frames.length - 1;
