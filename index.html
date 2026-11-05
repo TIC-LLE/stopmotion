@@ -1,0 +1,2866 @@
+<!DOCTYPE html>
+<html lang="ca" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Estudi Stop-Motion d'Aula v3.0 · Captura 1080p i Exportació MP4 HQ</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            display: ['Space Grotesk', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          }
+        }
+      }
+    };
+  </script>
+
+  <style>
+    body {
+      background-color: #090d16;
+      color: #f1f5f9;
+      overflow-x: hidden;
+      user-select: none;
+    }
+    .timeline-scroll::-webkit-scrollbar {
+      height: 10px;
+    }
+    .timeline-scroll::-webkit-scrollbar-track {
+      background: #0f172a;
+      border-radius: 6px;
+    }
+    .timeline-scroll::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 6px;
+      border: 2px solid #0f172a;
+    }
+    .timeline-scroll::-webkit-scrollbar-thumb:hover {
+      background: #475569;
+    }
+    @keyframes shutterFlash {
+      0% { opacity: 0.85; }
+      100% { opacity: 0; }
+    }
+    .animate-flash {
+      animation: shutterFlash 180ms ease-out forwards;
+    }
+    .kbd-badge {
+      display: inline-block;
+      padding: 0.1rem 0.45rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+      font-weight: 700;
+      background: #1e293b;
+      color: #cbd5e1;
+      border: 1px solid #475569;
+      border-bottom-width: 2px;
+      border-radius: 0.375rem;
+    }
+  </style>
+</head>
+<body class="h-screen flex flex-col justify-between bg-slate-950 text-slate-100">
+
+  <!-- NOTIFICACIÓ FLOTANT (TOAST) -->
+  <div id="toast" class="fixed bottom-5 right-5 z-50 hidden bg-slate-900 border border-slate-700 text-white px-4 py-3 rounded-xl shadow-2xl flex items-center gap-3 text-sm font-medium transition-all">
+    <span id="toast-icon" class="text-emerald-400 text-base">✓</span>
+    <span id="toast-text">Operació completada</span>
+  </div>
+
+  <!-- ==========================================
+       1. BARRA SUPERIOR (CONFIGURACIÓ DE CÀMERA, PROJECTE I EXPORTACIÓ)
+       ========================================== -->
+  <header class="bg-slate-900/95 border-b border-slate-800 px-3 sm:px-5 py-2 flex flex-wrap items-center justify-between gap-2.5 shrink-0 z-30">
+    
+    <!-- Logo i Estat d'Auto-desat + Mesurador de Capacitat -->
+    <div class="flex items-center gap-2.5">
+      <div class="w-9 h-9 rounded-xl bg-amber-500 text-slate-950 flex items-center justify-center font-bold text-lg shadow">
+        🎬
+      </div>
+      <div>
+        <div class="flex items-center gap-2">
+          <h1 class="font-display font-bold text-base sm:text-lg tracking-tight text-white">Estudi Stop-Motion <span class="text-amber-400">v3.0</span></h1>
+          <button onclick="toggleStorageModal(true)" id="db-status-badge" class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/30 transition cursor-pointer" title="Clica per veure l'estat de la memòria, límit de fotos i còpia de seguretat">
+            <span>💾 Auto-desat</span>
+            <span id="capacity-top-pill" class="font-mono text-[10px] bg-slate-950/80 px-1.5 py-0.2 rounded text-emerald-300">0/1500</span>
+          </button>
+        </div>
+        <p class="text-[11px] text-slate-400 hidden sm:block">1080p · Exportació MP4 HQ (20 Mbps) · Desfés Ctrl+Z · GitHub Pages Ready</p>
+      </div>
+    </div>
+
+    <!-- Selector de Càmera i Eines d'Escenari -->
+    <div class="flex flex-wrap items-center gap-1.5">
+      <div class="flex items-center bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-1.5 gap-1.5">
+        <span class="text-amber-400 text-xs">📷</span>
+        <select id="camera-select" onchange="handleCameraChange()" class="bg-transparent text-xs font-medium text-slate-200 focus:outline-none max-w-[155px] sm:max-w-[200px] truncate cursor-pointer">
+          <option value="loading" class="bg-slate-900">Cercant càmeres USB...</option>
+        </select>
+        <button onclick="refreshCameraList(false)" class="text-slate-400 hover:text-white px-1 transition text-xs" title="Refrescar la llista de càmeres connectades">
+          ↻
+        </button>
+      </div>
+
+      <!-- Insígnia de Resolució Real -->
+      <span id="resolution-badge" class="hidden xl:inline-block px-2.5 py-1.5 rounded-xl bg-slate-800 border border-slate-700 font-mono text-xs text-amber-300 font-semibold" title="Resolució de captura activa">
+        1920x1080
+      </span>
+
+      <!-- Girar 180° (Pla Zenital) -->
+      <button onclick="toggleFlip180()" id="btn-flip-180" class="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-semibold text-slate-300 transition flex items-center gap-1" title="Girar la imatge 180° (ideal quan el trípode apunta cap avall en pla zenital)">
+        <span>🔄 180°</span>
+      </button>
+
+      <!-- Mirall Horitzontal -->
+      <button onclick="toggleMirror()" id="btn-mirror" class="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-semibold text-slate-300 transition flex items-center gap-1" title="Invertir horitzontalment (Efecte mirall)">
+        <span>↔️ Mirall</span>
+      </button>
+
+      <!-- Croma en Viu -->
+      <button onclick="toggleChromaPanel()" id="btn-chroma-top" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-semibold text-emerald-400 transition flex items-center gap-1.5" title="Activar i configurar Croma en Viu (Tela verda)">
+        <span>🟩 Croma</span>
+      </button>
+
+      <!-- Generador de Títols i Crèdits -->
+      <button onclick="openTitleCardModal()" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-semibold text-amber-300 transition flex items-center gap-1.5" title="Crear una pàgina de Títol o Crèdits Finals en 1 sola targeta">
+        <span>🔤 Títols</span>
+      </button>
+    </div>
+
+    <!-- Botons de Projecte (Desar/Obrir), Qualitat Vídeo + Exportació, Pantalla Completa i Ajuda -->
+    <div class="flex items-center gap-1.5">
+      <div class="flex items-center bg-slate-950 border border-slate-700 rounded-xl p-0.5 gap-0.5">
+        <button onclick="exportProjectFile()" class="px-2.5 py-1.5 rounded-lg hover:bg-slate-800 text-slate-200 font-semibold text-xs transition flex items-center gap-1" title="Desar el projecte sencer en un fitxer per guardar-lo al Drive o USB i continuar en un altre ordinador">
+          <span>💾</span> <span class="hidden lg:inline">Desar</span>
+        </button>
+        <label class="px-2.5 py-1.5 rounded-lg hover:bg-slate-800 text-slate-200 font-semibold text-xs transition flex items-center gap-1 cursor-pointer" title="Obrir un fitxer de projecte (.stopmotion.zip) desat anteriorment">
+          <span>📂</span> <span class="hidden lg:inline">Obrir</span>
+          <input type="file" id="import-project-input" accept=".zip" onchange="importProjectFile(event)" class="hidden">
+        </label>
+      </div>
+
+      <!-- Grup Exportació MP4 amb Selector de Qualitat (Estàndard 8 Mbps vs HQ 20 Mbps) -->
+      <div class="flex items-center bg-amber-500 rounded-xl p-0.5 shadow">
+        <select id="video-quality-select" class="bg-slate-950/90 text-amber-300 text-[11px] font-bold px-2 py-1.5 rounded-l-lg focus:outline-none cursor-pointer border-r border-amber-500/40" title="Tria la qualitat i compressió del vídeo MP4 resultant">
+          <option value="20000000" selected>HQ · 20 Mbps</option>
+          <option value="8000000">Estàndard · 8 Mbps</option>
+        </select>
+        <button onclick="exportVideoMP4()" id="btn-export-mp4" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs px-2.5 py-1.5 rounded-r-lg transition flex items-center gap-1" title="Generar i descarregar l'arxiu de vídeo en alta definició">
+          <span>🎞️ MP4</span>
+        </button>
+      </div>
+
+      <button onclick="exportFramesZIP()" id="btn-export-zip" class="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs px-2.5 py-2 rounded-xl shadow transition flex items-center gap-1" title="Descarregar totes les fotos numerades (0001.jpg, 0002.jpg...) dins d'un fitxer .ZIP per a Shotcut">
+        <span>📦 .ZIP</span>
+      </button>
+
+      <button onclick="toggleFullScreen()" id="btn-fullscreen" class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-bold w-8 h-8 rounded-xl transition flex items-center justify-center" title="Activar/Desactivar Pantalla Completa (F11) per guanyar espai en Chromebooks">
+        ⛶
+      </button>
+
+      <button onclick="openConfirmClearModal()" class="bg-slate-800 hover:bg-rose-950 hover:text-rose-300 hover:border-rose-700 text-slate-300 border border-slate-700 text-xs font-semibold px-2.5 py-2 rounded-xl transition" title="Nou projecte (Esborrar totes les fotos actuals)">
+        🗑️
+      </button>
+
+      <button onclick="toggleHelpModal(true)" class="bg-slate-800 hover:bg-slate-700 text-amber-400 border border-slate-700 text-xs font-bold w-8 h-8 rounded-xl transition flex items-center justify-center" title="Dreceres de teclat i guia ràpida">
+        ?
+      </button>
+    </div>
+
+  </header>
+
+  <!-- ==========================================
+       2. VISOR CENTRAL (CÀMERA EN VIU + CROMA + GOMA MÀGICA + PELL DE CEBA)
+       ========================================== -->
+  <main class="flex-1 relative flex items-center justify-center bg-slate-950 p-2 sm:p-3 overflow-hidden">
+    
+    <!-- Contenidor 16:9 del Visor -->
+    <div id="stage-container" class="relative w-full max-w-5xl aspect-video bg-black rounded-2xl overflow-hidden shadow-2xl border-2 border-slate-800 flex items-center justify-center">
+      
+      <!-- Flux de Vídeo Real de la Webcam -->
+      <video id="webcam-video" autoplay playsinline muted class="w-full h-full object-contain"></video>
+
+      <!-- Escenari de Prova Interactiu (S'activa si no hi ha webcam o l'usuari tria "Escenari de Prova") -->
+      <canvas id="demo-stage-canvas" width="1920" height="1080" class="hidden w-full h-full object-contain cursor-grab active:cursor-grabbing"></canvas>
+
+      <!-- Llenç de Croma en Viu en Temps Real -->
+      <canvas id="live-chroma-canvas" width="1920" height="1080" class="hidden w-full h-full object-contain"></canvas>
+
+      <!-- Capa de Pell de Ceba (Onion Skin) i Pampalluga -->
+      <img id="onion-skin-img" alt="Pell de ceba" class="hidden pointer-events-none absolute inset-0 w-full h-full object-contain transition-opacity duration-75" style="opacity: 0.45;" />
+
+      <!-- Capa de Reproducció / Previsualització / Goma Màgica -->
+      <canvas id="playback-canvas" width="1920" height="1080" class="hidden absolute inset-0 w-full h-full object-contain bg-black"></canvas>
+
+      <!-- Cursor Circular del Pinzell de la Goma Màgica -->
+      <div id="eraser-cursor" class="hidden pointer-events-none fixed z-50 rounded-full border-2 border-amber-400 bg-amber-400/20 shadow-[0_0_12px_rgba(245,158,11,0.8)] -translate-x-1/2 -translate-y-1/2"></div>
+
+      <!-- Quadrícula de Regla dels Terços (Opcional) -->
+      <div id="grid-overlay" class="hidden pointer-events-none absolute inset-0">
+        <div class="w-full h-full grid grid-cols-3 grid-rows-3">
+          <div class="border-r border-b border-amber-400/35"></div>
+          <div class="border-r border-b border-amber-400/35"></div>
+          <div class="border-b border-amber-400/35"></div>
+          <div class="border-r border-b border-amber-400/35"></div>
+          <div class="border-r border-b border-amber-400/35 flex items-center justify-center">
+            <div class="w-3 h-3 border border-amber-400/60 rounded-full"></div>
+          </div>
+          <div class="border-b border-amber-400/35"></div>
+          <div class="border-r border-b border-amber-400/35"></div>
+          <div class="border-r border-b border-amber-400/35"></div>
+          <div></div>
+        </div>
+      </div>
+
+      <!-- Flash blanc de captura -->
+      <div id="shutter-flash" class="pointer-events-none absolute inset-0 bg-white opacity-0"></div>
+
+      <!-- Compte enrere gran per a l'Autodisparador -->
+      <div id="countdown-overlay" class="hidden pointer-events-none absolute inset-0 bg-slate-950/35 backdrop-blur-[1px] flex flex-col items-center justify-center">
+        <div class="w-36 h-36 rounded-full border-4 border-amber-400 bg-slate-900/80 flex items-center justify-center shadow-2xl">
+          <span id="countdown-number" class="font-display font-bold text-7xl sm:text-8xl text-amber-400">3</span>
+        </div>
+        <span class="mt-3 px-3 py-1 rounded-full bg-slate-900/90 text-amber-300 font-bold text-xs uppercase tracking-wider border border-amber-500/30">
+          Autodisparador actiu · Retireu les mans!
+        </span>
+      </div>
+
+      <!-- BARRA FLOTANT SUPERIOR DINS DEL VISOR -->
+      <div class="absolute top-3 left-3 right-3 flex flex-wrap items-center justify-between gap-2 pointer-events-none z-20">
+        
+        <div class="flex flex-wrap items-center gap-2 pointer-events-auto">
+          <div id="mode-pill" class="px-3 py-1 rounded-full bg-slate-900/90 border border-slate-700 backdrop-blur text-xs font-bold flex items-center gap-2 text-emerald-400 shadow">
+            <span id="mode-dot" class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+            <span id="mode-text">CÀMERA EN VIU</span>
+          </div>
+
+          <button id="btn-return-live" onclick="returnToLiveMode()" class="hidden px-3 py-1 rounded-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-lg transition flex items-center gap-1.5">
+            <span>📹 Tornar a Càmera en Viu</span>
+          </button>
+
+          <!-- Botó per capturar el Fons Net de Referència per a la Goma Màgica -->
+          <button id="btn-capture-bg-ref" onclick="captureReferenceBackground()" class="px-3 py-1 rounded-full bg-slate-900/90 hover:bg-slate-800 border border-slate-700 text-slate-200 text-xs font-semibold shadow transition flex items-center gap-1.5" title="Captura una foto de l'escenari buit (sense personatges ni mans) per poder esborrar mans o suports després amb la Goma Màgica">
+            <span id="bg-ref-label">🪄 Capturar Fons Net (Goma Màgica)</span>
+          </button>
+        </div>
+
+        <!-- Comptador de Temps i Targetes -->
+        <div class="px-3.5 py-1 rounded-full bg-slate-900/90 border border-slate-700 backdrop-blur font-mono text-xs text-slate-200 shadow flex items-center gap-2.5">
+          <span id="hud-frame-info">Targeta: <strong class="text-amber-400">0 / 0</strong></span>
+          <span class="text-slate-600">|</span>
+          <span id="hud-time-info">Durada: <strong class="text-emerald-400">0.0 s</strong></span>
+        </div>
+      </div>
+
+      <!-- PANELL FLOTANT DE LA GOMA MÀGICA / MASKING -->
+      <div id="magic-eraser-toolbar" class="hidden absolute bottom-3 left-1/2 -translate-x-1/2 z-30 bg-slate-900/95 border-2 border-purple-500 rounded-2xl px-4 py-2.5 shadow-2xl flex flex-wrap items-center gap-3 max-w-[95%]">
+        <div class="flex items-center gap-2 text-purple-300 font-display font-bold text-xs">
+          <span>🪄 Goma Màgica (Pinta sobre la mà o suport per esborrar-lo):</span>
+        </div>
+
+        <div class="flex items-center gap-1 bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-1 text-xs">
+          <span class="text-slate-400">Origen:</span>
+          <select id="eraser-source-select" onchange="updateEraserSource()" class="bg-transparent font-semibold text-purple-300 focus:outline-none cursor-pointer">
+            <option value="ref" class="bg-slate-900">Fons Net de Referència</option>
+            <option value="prev" class="bg-slate-900">Fotograma Anterior (#-1)</option>
+            <option value="first" class="bg-slate-900">Fotograma #1</option>
+          </select>
+        </div>
+
+        <div class="flex items-center gap-2 bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-1 text-xs">
+          <span class="text-slate-400">Pinzell:</span>
+          <input type="range" id="eraser-size-slider" min="15" max="220" value="75" oninput="updateEraserBrushSize(this.value)" class="w-20 accent-purple-500 cursor-pointer">
+          <span id="eraser-size-label" class="font-mono text-[11px] text-purple-300 w-9">75px</span>
+        </div>
+
+        <div class="flex items-center gap-1.5">
+          <button onclick="undoEraserStroke()" class="px-2.5 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200 border border-slate-700 transition">
+            ↶ Desfer
+          </button>
+          <button onclick="applyMagicEraserChanges()" class="px-3 py-1 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-xs font-bold text-white shadow transition">
+            ✓ Aplicar i Desar
+          </button>
+          <button onclick="closeMagicEraser(true)" class="px-2.5 py-1 rounded-xl bg-slate-800 hover:bg-rose-950 text-xs font-semibold text-slate-300 hover:text-rose-300 transition">
+            Cancel·lar
+          </button>
+        </div>
+      </div>
+
+      <!-- PANELL FLOTANT DE CROMA EN VIU -->
+      <div id="chroma-panel" class="hidden absolute top-14 right-3 z-30 w-80 bg-slate-900/95 border border-emerald-500/50 backdrop-blur-md rounded-2xl p-4 shadow-2xl space-y-3 text-xs">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+          <div class="flex items-center gap-2 font-display font-bold text-sm text-emerald-400">
+            <span>🟩 Estudi de Croma en Viu</span>
+          </div>
+          <button onclick="toggleChromaPanel()" class="text-slate-400 hover:text-white font-bold">✕</button>
+        </div>
+
+        <div class="flex items-center justify-between bg-slate-950 p-2.5 rounded-xl border border-slate-800">
+          <span class="font-semibold text-slate-200">Activar Croma en Viu</span>
+          <button onclick="toggleLiveChromaActive()" id="btn-chroma-switch" class="px-3 py-1 rounded-lg bg-slate-800 text-slate-400 font-bold transition">
+            DESACTIVAT
+          </button>
+        </div>
+
+        <div class="space-y-1.5">
+          <label class="text-slate-400 font-medium block">Color del fons a eliminar:</label>
+          <div class="flex items-center gap-2">
+            <input type="color" id="chroma-color-picker" value="#00b140" onchange="setChromaColorHex(this.value)" class="w-9 h-8 rounded cursor-pointer bg-transparent border border-slate-700">
+            <button onclick="activateChromaEyedropper()" id="btn-chroma-eyedropper" class="flex-1 py-1.5 px-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 font-semibold text-slate-200 flex items-center justify-center gap-1.5 transition">
+              <span>💧 Tria color a la pantalla</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="space-y-2">
+          <div>
+            <div class="flex justify-between text-[11px] mb-0.5">
+              <span class="text-slate-400">Tolerància del verd:</span>
+              <span id="chroma-tol-val" class="font-mono text-emerald-300">95</span>
+            </div>
+            <input type="range" id="chroma-tolerance" min="20" max="200" value="95" oninput="updateChromaSettings()" class="w-full h-1.5 bg-slate-700 rounded-lg accent-emerald-500 cursor-pointer">
+          </div>
+          <div>
+            <div class="flex justify-between text-[11px] mb-0.5">
+              <span class="text-slate-400">Suavitzat de vores:</span>
+              <span id="chroma-smooth-val" class="font-mono text-emerald-300">25</span>
+            </div>
+            <input type="range" id="chroma-smoothness" min="5" max="80" value="25" oninput="updateChromaSettings()" class="w-full h-1.5 bg-slate-700 rounded-lg accent-emerald-500 cursor-pointer">
+          </div>
+        </div>
+
+        <div class="space-y-1.5 pt-1 border-t border-slate-800">
+          <label class="text-slate-400 font-medium block">Escenari de fons substitut:</label>
+          <div class="grid grid-cols-2 gap-1.5">
+            <button onclick="selectPresetBackground('volcano')" class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-left truncate border border-slate-700">🌋 Volcà en erupció</button>
+            <button onclick="selectPresetBackground('space')" class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-left truncate border border-slate-700">🚀 Espai i Planetes</button>
+            <button onclick="selectPresetBackground('forest')" class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-left truncate border border-slate-700">🌲 Bosc encantat</button>
+            <button onclick="selectPresetBackground('chalkboard')" class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-left truncate border border-slate-700">🏫 Pissarra d'aula</button>
+          </div>
+          <label class="mt-1.5 w-full py-1.5 px-3 rounded-xl bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/40 text-emerald-300 font-semibold flex items-center justify-center gap-2 cursor-pointer transition">
+            <span>🖼️ Pujar imatge pròpia...</span>
+            <input type="file" accept="image/*" onchange="handleCustomChromaBgUpload(event)" class="hidden">
+          </label>
+        </div>
+      </div>
+
+      <!-- Ajuda interactiva quan s'utilitza l'Escenari de Prova -->
+      <div id="demo-banner" class="hidden absolute bottom-3 left-3 bg-indigo-950/90 border border-indigo-500/50 text-indigo-200 px-3 py-1.5 rounded-xl text-xs flex flex-wrap items-center gap-2 shadow-lg z-10">
+        <span>👆 <strong>Escenari de Prova:</strong> Arrossega el ninot i prem <span class="kbd-badge">Espai</span>!</span>
+        <button onclick="toggleDemoGreenScreen()" id="btn-demo-greenscreen" class="ml-1 px-2 py-0.5 rounded bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[11px] transition">
+          Posar Tela Verda de Prova
+        </button>
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- ==========================================
+       3. TAULER DE CONTROL I LÍNIA DE TEMPS (PART INFERIOR)
+       ========================================== -->
+  <section class="bg-slate-900 border-t border-slate-800 px-3 sm:px-6 py-2.5 space-y-2.5 shrink-0 z-20">
+    
+    <!-- Barra de Controls d'Estudi -->
+    <div class="flex flex-wrap items-center justify-between gap-2.5">
+      
+      <!-- Esquerra: Pell de Ceba, Pampalluga (Tab), Quadrícula i Autodisparador -->
+      <div class="flex flex-wrap items-center gap-2">
+        
+        <!-- Control Pell de Ceba -->
+        <div class="flex items-center gap-2 bg-slate-950 border border-slate-800 px-2.5 py-1.5 rounded-xl">
+          <button onclick="toggleOnionSkin()" id="btn-onion" class="text-xs font-bold flex items-center gap-1 text-purple-400 hover:text-purple-300 transition" title="Activar/Desactivar Pell de Ceba (Tecla O)">
+            <span>👻</span>
+            <span class="hidden md:inline">Pell Ceba</span>
+          </button>
+          <input type="range" id="onion-slider" min="0" max="90" value="45" oninput="updateOnionOpacity(this.value)" class="w-16 sm:w-20 h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-purple-500" title="Opacitat de la Pell de Ceba">
+          <span id="onion-val" class="font-mono text-[11px] text-slate-400 w-7">45%</span>
+        </div>
+
+        <!-- Botó Pampalluga (Tab) -->
+      <!-- Centre: Pausa per Fotograma (Hold), +4 Coixí, Captura i Play -->
+      <div class="flex items-center gap-2 mx-auto sm:mx-0">
+        
+        <!-- Selector Intel·ligent de Durada / Pausa (Hold) sense duplicar targetes -->
+        <div class="flex items-center gap-1.5 bg-slate-950 border border-slate-800 px-2.5 py-1.5 rounded-xl" title="Allarga la durada dels fotogrames seleccionats en 1 sola targeta sense omplir la barra de fotos repetides!">
+          <span class="text-[11px] text-slate-400 hidden xl:inline">Pausa:</span>
+          <select id="frame-hold-select" onchange="setSelectedFramesHold(this.value)" class="bg-transparent text-xs font-bold text-slate-200 focus:outline-none cursor-pointer">
+            <option value="1" class="bg-slate-900">1x (Normal)</option>
+            <option value="2" class="bg-slate-900">2x (Doble)</option>
+            <option value="4" class="bg-slate-900">4x (Coixí 0.5s)</option>
+            <option value="8" class="bg-slate-900">8x (Pausa 1s)</option>
+            <option value="16" class="bg-slate-900">16x (Títol 2s)</option>
+            <option value="24" class="bg-slate-900">24x (Títol 3s)</option>
+          </select>
+        </div>
+
+        <!-- Botó ràpid +4 Coixí -->
+        <button onclick="captureCushionFour()" class="px-2.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-amber-300 font-bold text-xs transition hidden md:flex items-center gap-1" title="Captura 1 foto amb pausa de 4 fotogrames (0.5 s) per fer el coixí d'inici o final sense omplir la barra!">
+          <span>+4 Coixí</span>
+        </button>
+
+        <!-- BOTÓ VERMELL DE CAPTURA -->
+        <button onclick="triggerCapture()" id="btn-capture" class="px-5 py-2 rounded-2xl bg-rose-600 hover:bg-rose-500 active:scale-95 text-white font-display font-bold text-sm sm:text-base shadow-lg shadow-rose-600/30 border border-rose-400/40 transition flex items-center gap-2">
+          <span class="w-3 h-3 rounded-full bg-white"></span>
+          <span>CAPTURAR</span>
+          <span class="text-[11px] font-mono bg-rose-800/80 px-1.5 py-0.5 rounded text-rose-100 hidden sm:inline">Espai</span>
+        </button>
+
+        <!-- BOTÓ REPRODUIR / PAUSA -->
+        <button onclick="togglePlayback()" id="btn-play" class="px-4 py-2 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-display font-bold text-sm sm:text-base shadow-lg shadow-emerald-600/20 transition flex items-center gap-2">
+          <span id="play-icon">▶</span>
+          <span id="play-text">Play</span>
+        </button>
+      </div>
+
+      <!-- Dreta: Velocitat FPS, Goma Màgica i Eines d'Edició en Bloc + Desfés -->
+      <div class="flex flex-wrap items-center gap-2">
+        
+        <!-- Selector FPS -->
+        <div class="flex items-center gap-1.5 bg-slate-950 border border-slate-800 px-2.5 py-1.5 rounded-xl">
+          <select id="fps-select" onchange="changeFPS(this.value)" class="bg-transparent text-xs font-bold text-amber-400 focus:outline-none cursor-pointer">
+            <option value="4" class="bg-slate-900">4 FPS (Infantil)</option>
+            <option value="8" selected class="bg-slate-900">8 FPS (Aula)</option>
+            <option value="10" class="bg-slate-900">10 FPS</option>
+            <option value="12" class="bg-slate-900">12 FPS (Suau)</option>
+            <option value="15" class="bg-slate-900">15 FPS</option>
+            <option value="24" class="bg-slate-900">24 FPS (Cinema)</option>
+          </select>
+        </div>
+
+        <!-- Botó Goma Màgica -->
+        <button onclick="openMagicEraserOnSelected()" id="btn-magic-eraser" class="px-3 py-1.5 rounded-xl bg-purple-600/25 hover:bg-purple-600/40 border border-purple-500/50 text-purple-200 text-xs font-bold transition flex items-center gap-1.5" title="Esborrar mans, dits o suports del fotograma actiu usant el fons de referència">
+          <span>🪄 Goma Màgica</span>
+        </button>
+
+        <!-- Accions sobre el Fotograma o Bloc de Fotogrames Seleccionats -->
+        <div class="flex items-center bg-slate-950 border border-slate-800 rounded-xl p-1 gap-1">
+          <button onclick="undoLastTimelineAction()" id="btn-undo-timeline" disabled class="px-2 py-1 rounded-lg hover:bg-slate-800 disabled:opacity-35 text-emerald-300 text-xs font-bold transition" title="Desfer l'últim esborrat o canvi a la línia de temps (Ctrl+Z)">
+            ↩
+          </button>
+          <button onclick="moveSelectedFrames(-1)" class="px-2 py-1 rounded-lg hover:bg-slate-800 text-slate-300 text-xs font-bold transition" title="Moure els fotogrames seleccionats cap a l'esquerra">
+            ◀
+          </button>
+          <button onclick="moveSelectedFrames(1)" class="px-2 py-1 rounded-lg hover:bg-slate-800 text-slate-300 text-xs font-bold transition" title="Moure els fotogrames seleccionats cap a la dreta">
+            ▶
+          </button>
+          <button onclick="reverseSelectedFrames()" class="px-2 py-1 rounded-lg hover:bg-slate-800 text-indigo-300 text-xs font-bold transition" title="Invertir l'ordre de les targetes seleccionades (efecte rebobinat / bumerang)">
+            ⇄
+          </button>
+          <button onclick="duplicateSelectedFrames()" class="px-2 py-1 rounded-lg hover:bg-slate-800 text-amber-300 text-xs font-semibold transition flex items-center gap-1" title="Duplicar totes les targetes seleccionades">
+            <span>⧉</span> <span class="hidden xl:inline">x2</span>
+          </button>
+          <button onclick="deleteSelectedFrames()" class="px-2 py-1 rounded-lg hover:bg-rose-950 text-rose-400 text-xs font-semibold transition flex items-center gap-1" title="Eliminar tots els fotogrames seleccionats (Tecla Supr)">
+            🗑️
+          </button>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Barra de Selecció Múltiple + Indicador de Capacitat i Durada Màxima + Tira de Fotogrames -->
+    <div class="relative bg-slate-950 border border-slate-800 rounded-xl p-2 space-y-1.5">
+      <div class="flex flex-wrap items-center justify-between gap-2 px-1 text-[11px] text-slate-400">
+        
+        <!-- Esquerra: Selecció Múltiple -->
+        <div class="flex items-center gap-2">
+          <span id="selection-count-badge" class="px-2 py-0.5 rounded bg-slate-900 border border-slate-800 font-mono text-slate-300 font-semibold">
+            0 seleccionades
+          </span>
+          <button onclick="selectAllFrames()" class="hover:text-white underline decoration-slate-600 transition">Seleccionar tot</button>
+          <span>·</span>
+          <button onclick="clearMultiSelection()" class="hover:text-white underline decoration-slate-600 transition">Cap</button>
+          <span class="hidden lg:inline text-slate-600">|</span>
+          <span class="hidden lg:inline text-slate-500">Usa <kbd class="px-1 py-0.5 bg-slate-900 border border-slate-700 rounded text-[10px]">Ctrl+Clic</kbd> o <kbd class="px-1 py-0.5 bg-slate-900 border border-slate-700 rounded text-[10px]">Maj+Clic</kbd> per selecció múltiple</span>
+        </div>
+
+        <!-- Dreta: Mesurador de Capacitat i Durada Màxima Recomanada -->
+        <div onclick="toggleStorageModal(true)" class="flex items-center gap-2.5 bg-slate-900/90 hover:bg-slate-900 px-2.5 py-1 rounded-lg border border-slate-800 cursor-pointer transition" title="Capacitat recomanada per escena a l'aula: fins a 1.500 fotos (~3 minuts de vídeo a 8 FPS). Clica per a més detalls.">
+          <span id="capacity-gauge-text" class="font-mono text-[11px] text-slate-300">
+            Capacitat: <strong class="text-emerald-400">0 / 1.500 fotos</strong> (~0.0 MB) · Màx recomanat: ~3 min
+          </span>
+          <div class="w-20 h-2 bg-slate-800 rounded-full overflow-hidden p-0.2 hidden sm:block">
+            <div id="capacity-gauge-bar" class="h-full bg-emerald-500 rounded-full transition-all duration-300" style="width: 0%"></div>
+          </div>
+        </div>
+
+      </div>
+
+      <div id="timeline-strip" class="timeline-scroll flex items-center gap-2 overflow-x-auto min-h-[84px] pb-1">
+        <div id="empty-timeline-msg" class="w-full py-4 text-center text-xs text-slate-500 flex items-center justify-center gap-2">
+          <span>📷 Encara no hi ha cap fotografia. Premeu <span class="kbd-badge">Espai</span> per capturar, o creeu una portada amb <strong>Títols</strong>!</span>
+        </div>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- ==========================================
+       4. MODALS (TÍTOLS EN 1 TARGETA, EMMAGATZEMATGE, EXPORTACIÓ, BUIDAT I AJUDA)
+       ========================================== -->
+
+  <!-- MODAL GENERADOR DE TARGETES DE TÍTOL I CRÈDITS EN 1 SOLA TARGETA -->
+  <div id="title-card-modal" class="fixed inset-0 z-50 hidden bg-slate-950/85 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-xl w-full p-6 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div>
+          <h3 class="font-display font-bold text-lg text-white">🎬 Generador de Títols i Crèdits</h3>
+          <p class="text-[11px] text-emerald-400">S'insereix com <strong>1 sola targeta</strong> a la línia de temps amb la pausa inclosa!</p>
+        </div>
+        <button onclick="closeTitleCardModal()" class="text-slate-400 hover:text-white font-bold text-lg">✕</button>
+      </div>
+
+      <div class="rounded-xl overflow-hidden border-2 border-slate-700 bg-black aspect-video relative">
+        <canvas id="title-preview-canvas" width="1920" height="1080" class="w-full h-full object-contain"></canvas>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+        <div>
+          <label class="block text-slate-400 font-semibold mb-1">Títol Principal:</label>
+          <input type="text" id="title-main-input" value="EL VIATGE DE PLASTILINA" oninput="renderTitleCardPreview()" placeholder="Ex: La Mitosi Cel·lular" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white font-semibold focus:border-amber-400 focus:outline-none">
+        </div>
+        <div>
+          <label class="block text-slate-400 font-semibold mb-1">Subtítol / Autors i Curs:</label>
+          <input type="text" id="title-sub-input" value="Fet per: Grup 3 · 5è Primària" oninput="renderTitleCardPreview()" placeholder="Ex: Laia, Marc i Pau · 2n ESO" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white focus:border-amber-400 focus:outline-none">
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+        <div>
+          <label class="block text-slate-400 font-semibold mb-1">Estil Visual de la Targeta:</label>
+          <select id="title-theme-select" onchange="renderTitleCardPreview()" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-slate-200 font-semibold focus:outline-none">
+            <option value="cinema">🎬 Cinema Clàssic Daurat</option>
+            <option value="clay">🟠 Plastilina Divertida i Colorida</option>
+            <option value="space">🚀 Aventura Espacial</option>
+            <option value="chalk">🏫 Pissarra d'Escola</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-slate-400 font-semibold mb-1">Durada de la Targeta al Vídeo:</label>
+          <select id="title-duration-select" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-amber-300 font-bold focus:outline-none">
+            <option value="2" selected>1 targeta de 2 segons (Pausa 16x)</option>
+            <option value="3">1 targeta de 3 segons (Pausa 24x)</option>
+            <option value="1">1 targeta d'1 segon (Pausa 8x)</option>
+            <option value="single">1 sol fotograma normal (Pausa 1x)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-800">
+        <button onclick="closeTitleCardModal()" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-300">
+          Cancel·lar
+        </button>
+        <div class="flex items-center gap-2">
+          <button onclick="insertTitleCardFrames('start')" class="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow transition">
+            ⏮ Inserir a l'Inici (1 Targeta)
+          </button>
+          <button onclick="insertTitleCardFrames('end')" class="px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow transition">
+            ⏭ Inserir al Final (1 Targeta)
+          </button>
+        </div>
+  <!-- MODAL D'EMMAGATZEMATGE, CAPACITAT MÀXIMA I BACKUP DE PROJECTE -->
+  <div id="storage-info-modal" class="fixed inset-0 z-50 hidden bg-slate-950/85 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <h3 class="font-display font-bold text-lg text-white">💾 Memòria, Capacitat Màxima i Projectes</h3>
+        <button onclick="toggleStorageModal(false)" class="text-slate-400 hover:text-white font-bold text-lg">✕</button>
+      </div>
+
+      <div class="space-y-3 text-xs text-slate-300 leading-relaxed">
+        <div class="p-3.5 rounded-xl bg-indigo-950/50 border border-indigo-500/30">
+          <div class="font-bold text-indigo-300 mb-1">📊 Límit recomanat: 1.500 fotos per projecte (~3 minuts a 8 FPS)</div>
+          Gràcies al motor de doble resolució (JPEG 1080p al 92% + miniatures lleugeres), qualsevol portàtil o Chromebook d'aula pot gestionar fins a <strong>1.500 fotografies (~375 MB)</strong> amb total fluïdesa. Si feu un curtmetratge més llarg, us recomanem exportar-lo per escenes en MP4 i unir-les a Shotcut.
+        </div>
+
+        <div class="p-3.5 rounded-xl bg-emerald-950/40 border border-emerald-500/30">
+          <div class="font-bold text-emerald-300 mb-1">✓ Auto-desat automàtic (No s'esborra en tancar el navegador)</div>
+          Cada fotografia es desa automàticament al disc dur d'aquest ordinador dins la base de dades interna del navegador (<strong>IndexedDB</strong>). Si es tanca la pestanya per accident o s'apaga el portàtil, en tornar a obrir la pàgina al <strong>mateix ordinador</strong> recuperaràs totes les fotos.
+        </div>
+
+        <div class="p-3.5 rounded-xl bg-amber-950/40 border border-amber-500/30">
+          <div class="font-bold text-amber-300 mb-1">⚠️ Quan cal prémer "Desar Projecte"?</div>
+          <ul class="list-disc list-inside space-y-1 text-slate-300">
+            <li>Si el proper dia els alumnes agafen un <strong>portàtil o Chromebook diferent</strong> del carretó.</li>
+            <li>Si estan treballant en una finestra de <strong>navegació d'incògnit</strong> (que ho esborra tot en tancar-se).</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-800">
+        <button onclick="toggleStorageModal(false); exportProjectFile();" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs">
+          💾 Descarregar Còpia del Projecte Ara
+        </button>
+        <button onclick="toggleStorageModal(false)" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs">
+          Entesos
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL DE PROGRÉS D'EXPORTACIÓ -->
+  <div id="export-modal" class="fixed inset-0 z-50 hidden bg-slate-950/85 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-md w-full p-6 shadow-2xl text-center space-y-4">
+      <div class="w-12 h-12 rounded-2xl bg-amber-500/20 border border-amber-400/40 text-amber-400 flex items-center justify-center text-2xl mx-auto animate-spin">
+        ⚙️
+      </div>
+      <h3 class="font-display font-bold text-lg text-white">Renderitzant Curtmetratge a 1080p...</h3>
+      <p class="text-xs text-slate-400">S'estan codificant totes les targetes i les seves pauses en alta definició.</p>
+      <div class="w-full bg-slate-800 h-3 rounded-full overflow-hidden p-0.5">
+        <div id="export-progress-bar" class="bg-amber-500 h-full rounded-full transition-all duration-150" style="width: 0%"></div>
+      </div>
+      <div id="export-progress-text" class="font-mono text-xs text-amber-300 font-bold">0%</div>
+    </div>
+  </div>
+
+  <!-- MODAL DE CONFIRMACIÓ PER ESBORRAR TOT EL PROJECTE -->
+  <div id="confirm-clear-modal" class="fixed inset-0 z-50 hidden bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
+      <div class="flex items-center gap-3 text-rose-400">
+        <span class="text-2xl">⚠️</span>
+        <h3 class="font-display font-bold text-lg text-white">Vols començar un projecte nou des de zero?</h3>
+      </div>
+      <p class="text-xs text-slate-300 leading-relaxed">
+        S'esborraran totes les fotografies actuals de la línia de temps. Si les vols conservar, prem abans <strong>Desar Projecte</strong> o <strong>Exportar MP4</strong>.
+      </p>
+      <div class="flex justify-end gap-2.5 pt-2">
+        <button onclick="closeConfirmClearModal()" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200">
+          Cancel·lar
+        </button>
+        <button onclick="confirmClearAllFrames()" class="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-xs font-bold text-white shadow">
+          Sí, esborrar-ho tot
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL D'AJUDA I DRECERES DE TECLAT -->
+  <div id="help-modal" class="fixed inset-0 z-50 hidden bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-5">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <h3 class="font-display font-bold text-lg text-white">⌨️ Dreceres de Teclat i Funcions d'Aula</h3>
+        <button onclick="toggleHelpModal(false)" class="text-slate-400 hover:text-white font-bold text-lg">✕</button>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
+        <div class="bg-slate-950 p-2.5 rounded-xl border border-slate-800 flex items-center justify-between">
+          <span class="text-slate-300">Capturar fotografia</span>
+          <span class="kbd-badge">Espai</span>
+        </div>
+        <div class="bg-slate-950 p-2.5 rounded-xl border border-slate-800 flex items-center justify-between">
+          <span class="text-slate-300">Pampalluga (Foto vs Viu)</span>
+          <span class="kbd-badge">Tab</span>
+        </div>
+        <div class="bg-slate-950 p-2.5 rounded-xl border border-slate-800 flex items-center justify-between">
+          <span class="text-slate-300">Reproduir / Pausa</span>
+          <span class="kbd-badge">Enter</span>
+        </div>
+        <div class="bg-slate-950 p-2.5 rounded-xl border border-slate-800 flex items-center justify-between">
+          <span class="text-slate-300">Esborrar seleccionades</span>
+          <span class="kbd-badge">Supr / Backspace</span>
+        </div>
+        <div class="bg-slate-950 p-2.5 rounded-xl border border-slate-800 flex items-center justify-between">
+          <span class="text-slate-300">Activar Pell de Ceba</span>
+          <span class="kbd-badge">O</span>
+        </div>
+        <div class="bg-slate-950 p-2.5 rounded-xl border border-slate-800 flex items-center justify-between">
+          <span class="text-slate-300">Mostrar Quadrícula</span>
+          <span class="kbd-badge">G</span>
+        </div>
+      </div>
+
+      <div class="bg-purple-950/40 border border-purple-500/30 rounded-xl p-3.5 text-xs text-purple-200 space-y-1.5 leading-relaxed">
+        <div class="font-bold text-purple-300">🪄 Com fer volar objectes amb la Goma Màgica:</div>
+        <p>
+          1. Feu clic a <strong>Capturar Fons Net</strong> amb l'escenari buit.<br>
+          2. Feu les fotos aguantant el ninot a l'aire amb un pal o amb la mà.<br>
+          3. Cliqueu <strong>Goma Màgica</strong> i pinteu per sobre de la vostra mà: desapareixerà revelant el fons net!
+        </p>
+      </div>
+
+      <div class="flex justify-end">
+        <button onclick="toggleHelpModal(false)" class="px-5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs">
+          Entesos!
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Canvas ocults per a captura 1080p, miniatures 160x90 i processament de fons -->
+  <canvas id="offscreen-capture-canvas" width="1920" height="1080" class="hidden"></canvas>
+  <canvas id="thumb-generator-canvas" width="160" height="90" class="hidden"></canvas>
+  <canvas id="chroma-bg-canvas" width="1920" height="1080" class="hidden"></canvas>
+
+  <!-- ==========================================
+       5. MOTOR JAVASCRIPT DE L'APLICACIÓ (VERSIÓ 3.0 - GITHUB PAGES READY)
+       ========================================== -->
+  <script>
+    // ESTAT GLOBAL DE L'ESTUDI
+    const MAX_RECOMMENDED_FRAMES = 1500;
+    let frames = [];
+    let timelineUndoStack = [];
+    let referenceBgBlob = null;
+    let referenceBgUrl = null;
+    let selectedFrameIndex = -1;
+    let selectedIndices = new Set();
+    let projectFPS = 8;
+    let isPlaying = false;
+    let isInspectingFrame = false;
+    let playbackAnimationId = null;
+    let lastPlaybackTime = 0;
+    let currentPlaybackIndex = 0;
+    let currentPlaybackHoldRemaining = 1;
+    let activeStream = null;
+    let usingDemoStage = false;
+    let demoGreenScreen = false;
+    let flip180 = false;
+    let mirrorHoriz = false;
+    let onionEnabled = true;
+    let onionOpacity = 0.45;
+    let gridEnabled = false;
+
+    // Mode Pampalluga / Blink Compare
+    let blinkIntervalId = null;
+    let blinkStateShowingLast = false;
+
+    // Intervalòmetre / Autodisparador
+    let intervalSeconds = 0;
+    let intervalTimerId = null;
+    let countdownValue = 0;
+
+    // Croma en Viu
+    let liveChromaEnabled = false;
+    let chromaKeyRGB = { r: 0, g: 177, b: 64 };
+    let chromaTolerance = 95;
+    let chromaSmoothness = 25;
+    let chromaEyedropperActive = false;
+    let chromaLoopId = null;
+
+    // Goma Màgica / Masking
+    let isMagicEraserActive = false;
+    let eraserBrushSize = 75;
+    let eraserDrawing = false;
+    let eraserReferenceImage = null;
+    let eraserUndoStack = [];
+
+    // Elements del DOM
+    const videoEl = document.getElementById('webcam-video');
+    const demoCanvas = document.getElementById('demo-stage-canvas');
+    const demoCtx = demoCanvas.getContext('2d');
+    const liveChromaCanvas = document.getElementById('live-chroma-canvas');
+    const liveChromaCtx = liveChromaCanvas.getContext('2d', { willReadFrequently: true });
+    const chromaBgCanvas = document.getElementById('chroma-bg-canvas');
+    const chromaBgCtx = chromaBgCanvas.getContext('2d');
+    const playbackCanvas = document.getElementById('playback-canvas');
+    const playbackCtx = playbackCanvas.getContext('2d');
+    const offscreenCanvas = document.getElementById('offscreen-capture-canvas');
+    const offscreenCtx = offscreenCanvas.getContext('2d', { willReadFrequently: true });
+    const thumbCanvas = document.getElementById('thumb-generator-canvas');
+    const thumbCtx = thumbCanvas.getContext('2d');
+    const onionImg = document.getElementById('onion-skin-img');
+    const eraserCursor = document.getElementById('eraser-cursor');
+
+    // ==========================================
+    // A. UTILITATS DE MEMÒRIA (BLOBS 1080P + MINIATURES 160x90)
+    // ==========================================
+    function canvasToBlob(canvasEl, quality = 0.92) {
+      return new Promise((resolve) => {
+        canvasEl.toBlob((blob) => resolve(blob), 'image/jpeg', quality);
+      });
+    }
+
+    function generateThumbnailFromCanvas(sourceCanvas) {
+      thumbCtx.clearRect(0, 0, 160, 90);
+      thumbCtx.drawImage(sourceCanvas, 0, 0, 160, 90);
+      return thumbCanvas.toDataURL('image/jpeg', 0.72);
+    }
+
+    function loadImageFromUrl(url) {
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => resolve(img);
+        img.onerror = (e) => reject(e);
+        img.src = url;
+      });
+    }
+
+    function revokeFrameUrls(frameObj) {
+      if (frameObj && frameObj.fullUrl && frameObj.fullUrl.startsWith('blob:')) {
+        try { URL.revokeObjectURL(frameObj.fullUrl); } catch (e) {}
+      }
+    }
+
+    // Sistema Desfés (Ctrl+Z) per a la línia de temps (conserva Blobs en memòria)
+    function pushTimelineUndoSnapshot() {
+      const snapshot = frames.map(f => ({
+        id: f.id,
+        fullBlob: f.fullBlob,
+        thumbUrl: f.thumbUrl,
+        hold: f.hold || 1,
+        isTitle: !!f.isTitle,
+        timestamp: f.timestamp
+      }));
+      timelineUndoStack.push(snapshot);
+      if (timelineUndoStack.length > 10) timelineUndoStack.shift();
+      updateUndoButtonState();
+    }
+
+    function updateUndoButtonState() {
+      const btn = document.getElementById('btn-undo-timeline');
+      if (btn) btn.disabled = timelineUndoStack.length === 0;
+    }
+
+    function undoLastTimelineAction() {
+      if (timelineUndoStack.length === 0) {
+        showToast('No hi ha cap acció recent per desfer', true);
+        return;
+      }
+      frames.forEach(f => revokeFrameUrls(f));
+      const restored = timelineUndoStack.pop();
+      frames = restored.map(f => ({
+        ...f,
+        fullUrl: URL.createObjectURL(f.fullBlob)
+      }));
+      selectedFrameIndex = frames.length - 1;
+      selectedIndices = selectedFrameIndex >= 0 ? new Set([selectedFrameIndex]) : new Set();
+      updateUndoButtonState();
+      updateTimelineUI(false);
+      refreshOnionSkinOverlay();
+      saveProjectToDB();
+      showToast('↩ S\'ha desfet l\'última acció a la línia de temps!');
+    }
+
+    function toggleFullScreen() {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(() => {});
+      } else {
+        document.exitFullscreen().catch(() => {});
+      }
+    }
+
+    // ==========================================
+    // B. SINTETITZADOR D'ÀUDIO (CLAC DE CÀMERA I BIPS)
+    // ==========================================
+    let audioCtx = null;
+    function getAudioContext() {
+      if (!audioCtx) {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        if (AudioContextClass) audioCtx = new AudioContextClass();
+      }
+      if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+      return audioCtx;
+    }
+
+    function playShutterSound() {
+      try {
+        const ctx = getAudioContext();
+        if (!ctx) return;
+        const now = ctx.currentTime;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(920, now);
+        osc.frequency.exponentialRampToValueAtTime(140, now + 0.065);
+        gain.gain.setValueAtTime(0.28, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.065);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.07);
+      } catch (e) {}
+    }
+
+    function playCountdownBeep(isFinal) {
+      try {
+        const ctx = getAudioContext();
+        if (!ctx) return;
+        const now = ctx.currentTime;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(isFinal ? 960 : 540, now);
+        gain.gain.setValueAtTime(0.2, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.14);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.15);
+      } catch (e) {}
+    }
+
+    // ==========================================
+    // C. PERSISTÈNCIA AUTOMÀTICA AMB INDEXEDDB
+    // ==========================================
+    const DB_NAME = 'StopMotionAulaDB_v2';
+    const DB_VERSION = 1;
+    let dbInstance = null;
+
+    function initIndexedDB() {
+      return new Promise((resolve) => {
+        try {
+          if (!window.indexedDB) { resolve(null); return; }
+          const request = indexedDB.open(DB_NAME, DB_VERSION);
+          request.onupgradeneeded = (e) => {
+            const db = e.target.result;
+            if (!db.objectStoreNames.contains('project')) {
+              db.createObjectStore('project', { keyPath: 'key' });
+            }
+          };
+          request.onsuccess = (e) => {
+            dbInstance = e.target.result;
+            resolve(dbInstance);
+          };
+          request.onerror = () => resolve(null);
+        } catch (err) {
+          resolve(null);
+        }
+      });
+    }
+
+    function saveProjectToDB() {
+      if (!dbInstance) return;
+      try {
+        const storedFrames = frames.map(f => ({
+          id: f.id,
+          fullBlob: f.fullBlob,
+          thumbUrl: f.thumbUrl,
+          hold: f.hold || 1,
+          isTitle: !!f.isTitle,
+          timestamp: f.timestamp
+        }));
+        const tx = dbInstance.transaction('project', 'readwrite');
+        const store = tx.objectStore('project');
+        store.put({
+          key: 'currentSession',
+          frames: storedFrames,
+          referenceBgBlob: referenceBgBlob,
+          fps: projectFPS,
+          updatedAt: Date.now()
+        });
+      } catch (e) {}
+    }
+
+    function loadProjectFromDB() {
+      return new Promise((resolve) => {
+        if (!dbInstance) { resolve(null); return; }
+        try {
+          const tx = dbInstance.transaction('project', 'readonly');
+          const store = tx.objectStore('project');
+          const req = store.get('currentSession');
+          req.onsuccess = () => resolve(req.result || null);
+          req.onerror = () => resolve(null);
+        } catch (e) {
+          resolve(null);
+        }
+      });
+    }
+
+    // ==========================================
+    // D. GESTIÓ DE WEBCAM A 1080P I ESCENARI DE PROVA
+    // ==========================================
+    async function initCameraSystem() {
+      drawPresetChromaBackground('volcano');
+      await refreshCameraList(true);
+    }
+
+    async function refreshCameraList(initialLoad = false) {
+      const select = document.getElementById('camera-select');
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        enableDemoStage();
+        return;
+      }
+
+      try {
+        if (initialLoad) {
+          await startWebcamStream(null);
+        }
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const videoDevices = devices.filter(d => d.kind === 'videoinput');
+
+        const currentVal = select.value;
+        select.innerHTML = '';
+
+        videoDevices.forEach((dev, idx) => {
+          const opt = document.createElement('option');
+          opt.value = dev.deviceId;
+          opt.textContent = dev.label || `Càmera USB #${idx + 1}`;
+          opt.className = 'bg-slate-900 text-slate-100';
+          select.appendChild(opt);
+        });
+
+        const demoOpt = document.createElement('option');
+        demoOpt.value = 'demo-mode';
+        demoOpt.textContent = '🎨 Escenari de Prova (Sense càmera)';
+        demoOpt.className = 'bg-slate-900 text-amber-300 font-semibold';
+        select.appendChild(demoOpt);
+
+        if (usingDemoStage) {
+          select.value = 'demo-mode';
+        } else if (currentVal && currentVal !== 'loading' && [...select.options].some(o => o.value === currentVal)) {
+          select.value = currentVal;
+        } else if (videoDevices.length > 0) {
+          select.value = videoDevices[0].deviceId;
+        }
+      } catch (err) {
+        enableDemoStage();
+      }
+    }
+
+    async function startWebcamStream(deviceId) {
+      stopActiveStream();
+      const constraints = {
+        audio: false,
+        video: {
+          width: { ideal: 1920 },
+          height: { ideal: 1080 },
+          ...(deviceId ? { deviceId: { exact: deviceId } } : {})
+        }
+      };
+
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia(constraints);
+        activeStream = stream;
+        usingDemoStage = false;
+
+        videoEl.srcObject = stream;
+        updateViewportSourceVisibility();
+        document.getElementById('demo-banner').classList.add('hidden');
+
+        videoEl.onloadedmetadata = () => {
+          videoEl.play();
+          const w = videoEl.videoWidth || 1920;
+          const h = videoEl.videoHeight || 1080;
+          document.getElementById('resolution-badge').textContent = `${w}x${h}`;
+        };
+      } catch (err) {
+        enableDemoStage();
+      }
+    }
+
+    function stopActiveStream() {
+      if (activeStream) {
+        activeStream.getTracks().forEach(track => track.stop());
+        activeStream = null;
+      }
+    }
+
+    function handleCameraChange() {
+      const val = document.getElementById('camera-select').value;
+      if (val === 'demo-mode') {
+        enableDemoStage();
+      } else {
+        startWebcamStream(val);
+      }
+    }
+
+    function updateViewportSourceVisibility() {
+      if (liveChromaEnabled) {
+        videoEl.classList.add('hidden');
+        demoCanvas.classList.add('hidden');
+        liveChromaCanvas.classList.remove('hidden');
+      } else if (usingDemoStage) {
+        videoEl.classList.add('hidden');
+        liveChromaCanvas.classList.add('hidden');
+        demoCanvas.classList.remove('hidden');
+      } else {
+        demoCanvas.classList.add('hidden');
+        liveChromaCanvas.classList.add('hidden');
+        videoEl.classList.remove('hidden');
+      }
+    }
+
+    // ==========================================
+    // E. ESCENARI DE PROVA INTERACTIU
+    // ==========================================
+    let demoCharacter = { x: 600, y: 680, radius: 95, dragging: false };
+    let demoCloud = { x: 1350, y: 250, dragging: false };
+    let demoRigVisible = true;
+
+    function enableDemoStage() {
+      stopActiveStream();
+      usingDemoStage = true;
+      updateViewportSourceVisibility();
+      document.getElementById('demo-banner').classList.remove('hidden');
+      document.getElementById('resolution-badge').textContent = '1920x1080 (Prova)';
+
+      const select = document.getElementById('camera-select');
+      if (![...select.options].some(o => o.value === 'demo-mode')) {
+        select.innerHTML = '<option value="demo-mode" class="bg-slate-900 text-amber-300">🎨 Escenari de Prova (Sense càmera)</option>';
+      }
+      select.value = 'demo-mode';
+      renderDemoStage();
+    }
+
+    function toggleDemoGreenScreen() {
+      demoGreenScreen = !demoGreenScreen;
+      const btn = document.getElementById('btn-demo-greenscreen');
+      if (demoGreenScreen) {
+        btn.textContent = 'Treure Tela Verda';
+        btn.className = 'ml-1 px-2 py-0.5 rounded bg-amber-500 text-slate-950 font-bold text-[11px] transition';
+        showToast('Tela verda activada! Obre "Croma en Viu" a dalt per substituir el fons.');
+      } else {
+        btn.textContent = 'Posar Tela Verda de Prova';
+        btn.className = 'ml-1 px-2 py-0.5 rounded bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[11px] transition';
+      }
+      renderDemoStage();
+    }
+
+    function renderDemoStage(cleanBackgroundOnly = false) {
+      if (!usingDemoStage && !cleanBackgroundOnly) return;
+
+      if (demoGreenScreen) {
+        demoCtx.fillStyle = '#00b140';
+        demoCtx.fillRect(0, 0, 1920, 1080);
+      } else {
+        const grad = demoCtx.createLinearGradient(0, 0, 0, 1080);
+        grad.addColorStop(0, '#1e293b');
+        grad.addColorStop(1, '#0f172a');
+        demoCtx.fillStyle = grad;
+        demoCtx.fillRect(0, 0, 1920, 1080);
+
+        demoCtx.fillStyle = '#334155';
+        demoCtx.beginPath();
+        demoCtx.moveTo(150, 820);
+        demoCtx.lineTo(550, 420);
+        demoCtx.lineTo(950, 820);
+        demoCtx.fill();
+
+        demoCtx.fillStyle = '#475569';
+        demoCtx.beginPath();
+        demoCtx.moveTo(750, 820);
+        demoCtx.lineTo(1280, 360);
+        demoCtx.lineTo(1780, 820);
+        demoCtx.fill();
+      }
+
+      demoCtx.fillStyle = demoGreenScreen ? '#009e38' : '#0ea5e9';
+      demoCtx.fillRect(0, 820, 1920, 260);
+
+      demoCtx.save();
+      demoCtx.translate(demoCloud.x, demoCloud.y);
+      demoCtx.fillStyle = '#f8fafc';
+      demoCtx.beginPath();
+      demoCtx.arc(0, 0, 70, 0, Math.PI * 2);
+      demoCtx.arc(65, -15, 55, 0, Math.PI * 2);
+      demoCtx.arc(-65, -10, 50, 0, Math.PI * 2);
+      demoCtx.fill();
+      demoCtx.restore();
+
+      if (cleanBackgroundOnly) return;
+
+      // Vareta de suport per provar la Goma Màgica
+      if (demoRigVisible) {
+        demoCtx.save();
+        demoCtx.strokeStyle = '#94a3b8';
+        demoCtx.lineWidth = 18;
+        demoCtx.lineCap = 'round';
+        demoCtx.beginPath();
+        demoCtx.moveTo(demoCharacter.x, 0);
+        demoCtx.lineTo(demoCharacter.x, demoCharacter.y - 95);
+        demoCtx.stroke();
+        demoCtx.restore();
+      }
+
+      // Ninot de plastilina taronja
+      demoCtx.save();
+      demoCtx.translate(demoCharacter.x, demoCharacter.y);
+      demoCtx.fillStyle = 'rgba(0,0,0,0.3)';
+      demoCtx.beginPath();
+      demoCtx.ellipse(0, 840 - demoCharacter.y, 75, 20, 0, 0, Math.PI * 2);
+      demoCtx.fill();
+
+      demoCtx.fillStyle = '#f59e0b';
+      demoCtx.strokeStyle = '#fef3c7';
+      demoCtx.lineWidth = 8;
+      demoCtx.beginPath();
+      demoCtx.arc(0, -25, demoCharacter.radius, 0, Math.PI * 2);
+      demoCtx.fill();
+      demoCtx.stroke();
+
+      demoCtx.fillStyle = '#0f172a';
+      demoCtx.beginPath();
+      demoCtx.arc(32, -45, 16, 0, Math.PI * 2);
+      demoCtx.arc(-18, -45, 16, 0, Math.PI * 2);
+      demoCtx.fill();
+
+      demoCtx.fillStyle = '#ffffff';
+      demoCtx.beginPath();
+      demoCtx.arc(37, -50, 6, 0, Math.PI * 2);
+      demoCtx.arc(-13, -50, 6, 0, Math.PI * 2);
+      demoCtx.fill();
+
+      demoCtx.strokeStyle = '#0f172a';
+      demoCtx.lineWidth = 7;
+      demoCtx.lineCap = 'round';
+      demoCtx.beginPath();
+      demoCtx.arc(8, -15, 34, 0.15 * Math.PI, 0.85 * Math.PI);
+      demoCtx.stroke();
+      demoCtx.restore();
+    }
+
+    function getStagePointerPos(evt, targetEl) {
+      const rect = targetEl.getBoundingClientRect();
+      const clientX = evt.touches ? evt.touches[0].clientX : evt.clientX;
+      const clientY = evt.touches ? evt.touches[0].clientY : evt.clientY;
+      return {
+        x: ((clientX - rect.left) / rect.width) * 1920,
+        y: ((clientY - rect.top) / rect.height) * 1080
+      };
+    }
+
+    function handleStagePointerDown(e) {
+      if (chromaEyedropperActive) {
+        sampleChromaColorFromStage(e);
+        return;
+      }
+      if (!usingDemoStage || isMagicEraserActive) return;
+      const target = liveChromaEnabled ? liveChromaCanvas : demoCanvas;
+      const pos = getStagePointerPos(e, target);
+      const distChar = Math.hypot(pos.x - demoCharacter.x, pos.y - (demoCharacter.y - 25));
+      const distCloud = Math.hypot(pos.x - demoCloud.x, pos.y - demoCloud.y);
+      if (distChar < 140) {
+        demoCharacter.dragging = true;
+      } else if (distCloud < 130) {
+        demoCloud.dragging = true;
+      } else {
+        demoCharacter.x = Math.max(120, Math.min(1800, pos.x));
+        demoCharacter.y = Math.max(180, Math.min(780, pos.y));
+        renderDemoStage();
+      }
+    }
+
+    demoCanvas.addEventListener('pointerdown', handleStagePointerDown);
+    liveChromaCanvas.addEventListener('pointerdown', handleStagePointerDown);
+    videoEl.addEventListener('pointerdown', (e) => {
+      if (chromaEyedropperActive) sampleChromaColorFromStage(e);
+    });
+
+    window.addEventListener('pointermove', (e) => {
+      if (!usingDemoStage || (!demoCharacter.dragging && !demoCloud.dragging)) return;
+      const target = liveChromaEnabled ? liveChromaCanvas : demoCanvas;
+      const pos = getStagePointerPos(e, target);
+      if (demoCharacter.dragging) {
+        demoCharacter.x = Math.max(120, Math.min(1800, pos.x));
+        demoCharacter.y = Math.max(180, Math.min(780, pos.y));
+      } else if (demoCloud.dragging) {
+        demoCloud.x = Math.max(150, Math.min(1770, pos.x));
+        demoCloud.y = Math.max(120, Math.min(550, pos.y));
+      }
+      renderDemoStage();
+    });
+
+    window.addEventListener('pointerup', () => {
+      demoCharacter.dragging = false;
+      demoCloud.dragging = false;
+    });
+
+    // ==========================================
+    // F. MOTOR DE CROMA EN VIU AL VISOR
+    // ==========================================
+    function toggleChromaPanel() {
+      const panel = document.getElementById('chroma-panel');
+      panel.classList.toggle('hidden');
+    }
+
+    function toggleLiveChromaActive() {
+      liveChromaEnabled = !liveChromaEnabled;
+      const btn = document.getElementById('btn-chroma-switch');
+      const topBtn = document.getElementById('btn-chroma-top');
+
+      if (liveChromaEnabled) {
+        btn.textContent = 'ACTIVAT';
+        btn.className = 'px-3 py-1 rounded-lg bg-emerald-500 text-slate-950 font-bold transition shadow';
+        topBtn.className = 'px-3 py-1.5 rounded-xl bg-emerald-500 text-slate-950 font-bold text-xs transition flex items-center gap-1.5 shadow';
+        if (usingDemoStage && !demoGreenScreen) {
+          toggleDemoGreenScreen();
+        }
+        updateViewportSourceVisibility();
+        startLiveChromaLoop();
+      } else {
+        btn.textContent = 'DESACTIVAT';
+        btn.className = 'px-3 py-1 rounded-lg bg-slate-800 text-slate-400 font-bold transition';
+        topBtn.className = 'px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-semibold text-emerald-400 transition flex items-center gap-1.5';
+        if (chromaLoopId) cancelAnimationFrame(chromaLoopId);
+        updateViewportSourceVisibility();
+      }
+    }
+
+    function setChromaColorHex(hex) {
+      const r = parseInt(hex.slice(1, 3), 16);
+      const g = parseInt(hex.slice(3, 5), 16);
+      const b = parseInt(hex.slice(5, 7), 16);
+      chromaKeyRGB = { r, g, b };
+    }
+
+    function rgbToHex(r, g, b) {
+      return '#' + [r, g, b].map(x => x.toString(16).padStart(2, '0')).join('');
+    }
+
+    function activateChromaEyedropper() {
+      chromaEyedropperActive = true;
+      const btn = document.getElementById('btn-chroma-eyedropper');
+      btn.className = 'flex-1 py-1.5 px-2.5 rounded-xl bg-amber-500 text-slate-950 font-bold flex items-center justify-center gap-1.5 transition';
+      btn.innerHTML = '<span>🎯 Fes clic al fons verd...</span>';
+      showToast('Fes clic sobre la tela verda del visor per calibrar el color');
+    }
+
+    function sampleChromaColorFromStage(e) {
+      chromaEyedropperActive = false;
+      const btn = document.getElementById('btn-chroma-eyedropper');
+      btn.className = 'flex-1 py-1.5 px-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 font-semibold text-slate-200 flex items-center justify-center gap-1.5 transition';
+      btn.innerHTML = '<span>💧 Tria color a la pantalla</span>';
+
+      drawRawCameraToContext(offscreenCtx);
+      const targetEl = e.currentTarget;
+      const pos = getStagePointerPos(e, targetEl);
+      const pixel = offscreenCtx.getImageData(Math.floor(pos.x), Math.floor(pos.y), 1, 1).data;
+      chromaKeyRGB = { r: pixel[0], g: pixel[1], b: pixel[2] };
+      document.getElementById('chroma-color-picker').value = rgbToHex(pixel[0], pixel[1], pixel[2]);
+      showToast('Color de croma calibrat!');
+    }
+
+    function updateChromaSettings() {
+      chromaTolerance = parseInt(document.getElementById('chroma-tolerance').value, 10);
+      chromaSmoothness = parseInt(document.getElementById('chroma-smoothness').value, 10);
+      document.getElementById('chroma-tol-val').textContent = chromaTolerance;
+      document.getElementById('chroma-smooth-val').textContent = chromaSmoothness;
+    }
+
+    function selectPresetBackground(preset) {
+      drawPresetChromaBackground(preset);
+      showToast('Escenari de fons actualitzat');
+    }
+
+    function drawPresetChromaBackground(preset) {
+      chromaBgCtx.clearRect(0, 0, 1920, 1080);
+      if (preset === 'volcano') {
+        const g = chromaBgCtx.createLinearGradient(0, 0, 0, 1080);
+        g.addColorStop(0, '#450a0a');
+        g.addColorStop(0.6, '#991b1b');
+        g.addColorStop(1, '#ea580c');
+        chromaBgCtx.fillStyle = g;
+        chromaBgCtx.fillRect(0, 0, 1920, 1080);
+        chromaBgCtx.fillStyle = '#1c1917';
+        chromaBgCtx.beginPath();
+        chromaBgCtx.moveTo(350, 1080);
+        chromaBgCtx.lineTo(820, 340);
+        chromaBgCtx.lineTo(1120, 340);
+        chromaBgCtx.lineTo(1590, 1080);
+        chromaBgCtx.fill();
+        chromaBgCtx.fillStyle = '#fb923c';
+        chromaBgCtx.beginPath();
+        chromaBgCtx.arc(970, 300, 110, 0, Math.PI * 2);
+        chromaBgCtx.fill();
+      } else if (preset === 'space') {
+        chromaBgCtx.fillStyle = '#020617';
+        chromaBgCtx.fillRect(0, 0, 1920, 1080);
+        for (let i = 0; i < 140; i++) {
+          chromaBgCtx.fillStyle = i % 3 === 0 ? '#fde047' : '#ffffff';
+          chromaBgCtx.beginPath();
+          chromaBgCtx.arc((i * 197) % 1920, (i * 311) % 900, (i % 3) + 1.5, 0, Math.PI * 2);
+          chromaBgCtx.fill();
+        }
+        chromaBgCtx.fillStyle = '#6366f1';
+        chromaBgCtx.beginPath();
+        chromaBgCtx.arc(1450, 320, 130, 0, Math.PI * 2);
+        chromaBgCtx.fill();
+        chromaBgCtx.fillStyle = '#334155';
+        chromaBgCtx.fillRect(0, 850, 1920, 230);
+      } else if (preset === 'forest') {
+        const g = chromaBgCtx.createLinearGradient(0, 0, 0, 1080);
+        g.addColorStop(0, '#064e3b');
+        g.addColorStop(1, '#022c22');
+        chromaBgCtx.fillStyle = g;
+        chromaBgCtx.fillRect(0, 0, 1920, 1080);
+        for (let x = 150; x < 1850; x += 280) {
+          chromaBgCtx.fillStyle = '#047857';
+          chromaBgCtx.beginPath();
+          chromaBgCtx.moveTo(x, 220);
+          chromaBgCtx.lineTo(x - 140, 860);
+          chromaBgCtx.lineTo(x + 140, 860);
+          chromaBgCtx.fill();
+        }
+        chromaBgCtx.fillStyle = '#15803d';
+        chromaBgCtx.fillRect(0, 840, 1920, 240);
+      } else {
+        chromaBgCtx.fillStyle = '#14532d';
+        chromaBgCtx.fillRect(0, 0, 1920, 1080);
+        chromaBgCtx.strokeStyle = '#78350f';
+        chromaBgCtx.lineWidth = 42;
+        chromaBgCtx.strokeRect(21, 21, 1878, 1038);
+      }
+    }
+
+    function handleCustomChromaBgUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          chromaBgCtx.fillStyle = '#000';
+          chromaBgCtx.fillRect(0, 0, 1920, 1080);
+          chromaBgCtx.drawImage(img, 0, 0, 1920, 1080);
+          showToast('Imatge de fons personalitzada carregada!');
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function drawRawCameraToContext(targetCtx) {
+      targetCtx.save();
+      targetCtx.fillStyle = '#000000';
+      targetCtx.fillRect(0, 0, 1920, 1080);
+
+      let scaleX = mirrorHoriz ? -1 : 1;
+      let scaleY = 1;
+      if (flip180) {
+        scaleX *= -1;
+        scaleY *= -1;
+      }
+      targetCtx.translate(scaleX === -1 ? 1920 : 0, scaleY === -1 ? 1080 : 0);
+      targetCtx.scale(scaleX, scaleY);
+
+      if (usingDemoStage) {
+        renderDemoStage(false);
+        targetCtx.drawImage(demoCanvas, 0, 0, 1920, 1080);
+      } else {
+        const vw = videoEl.videoWidth || 1920;
+        const vh = videoEl.videoHeight || 1080;
+        const scale = Math.min(1920 / vw, 1080 / vh);
+        const drawW = vw * scale;
+        const drawH = vh * scale;
+        const offsetX = (1920 - drawW) / 2;
+        const offsetY = (1080 - drawH) / 2;
+        targetCtx.drawImage(videoEl, offsetX, offsetY, drawW, drawH);
+      }
+      targetCtx.restore();
+    }
+
+    function renderCompositeChromaToContext(targetCtx) {
+      drawRawCameraToContext(targetCtx);
+      const fgData = targetCtx.getImageData(0, 0, 1920, 1080);
+      const data = fgData.data;
+
+      const kr = chromaKeyRGB.r;
+      const kg = chromaKeyRGB.g;
+      const kb = chromaKeyRGB.b;
+      const tolSq = chromaTolerance * chromaTolerance;
+      const maxSq = (chromaTolerance + chromaSmoothness) * (chromaTolerance + chromaSmoothness);
+      const rangeSq = Math.max(1, maxSq - tolSq);
+
+      for (let i = 0; i < data.length; i += 4) {
+        const dr = data[i] - kr;
+        const dg = data[i + 1] - kg;
+        const db = data[i + 2] - kb;
+        const distSq = dr * dr + dg * dg + db * db;
+
+        if (distSq < tolSq) {
+          data[i + 3] = 0;
+        } else if (distSq < maxSq) {
+          data[i + 3] = Math.round(((distSq - tolSq) / rangeSq) * 255);
+        }
+      }
+
+      offscreenCtx.putImageData(fgData, 0, 0);
+      targetCtx.drawImage(chromaBgCanvas, 0, 0, 1920, 1080);
+      targetCtx.drawImage(offscreenCanvas, 0, 0, 1920, 1080);
+    }
+
+    function startLiveChromaLoop() {
+      if (!liveChromaEnabled) return;
+      if (!isPlaying && !isInspectingFrame && !isMagicEraserActive) {
+        renderCompositeChromaToContext(liveChromaCtx);
+      }
+      chromaLoopId = requestAnimationFrame(startLiveChromaLoop);
+    }
+
+    // ==========================================
+    // G. TRANSFORMACIONS D'IMATGE (GIRAR 180° I MIRALL)
+    // ==========================================
+    function applyTransformStyles() {
+      let scaleX = mirrorHoriz ? -1 : 1;
+      let scaleY = 1;
+      if (flip180) {
+        scaleX *= -1;
+        scaleY *= -1;
+      }
+      const transformStr = `scale(${scaleX}, ${scaleY})`;
+      videoEl.style.transform = transformStr;
+      demoCanvas.style.transform = transformStr;
+    }
+
+    function toggleFlip180() {
+      flip180 = !flip180;
+      const btn = document.getElementById('btn-flip-180');
+      if (flip180) {
+        btn.className = 'px-2.5 py-1.5 rounded-xl bg-amber-500 text-slate-950 font-bold text-xs transition flex items-center gap-1 shadow';
+        showToast('Imatge girada 180° (Pla Zenital activat)');
+      } else {
+        btn.className = 'px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-semibold text-slate-300 transition flex items-center gap-1';
+      }
+      applyTransformStyles();
+    }
+
+    function toggleMirror() {
+      mirrorHoriz = !mirrorHoriz;
+      const btn = document.getElementById('btn-mirror');
+      if (mirrorHoriz) {
+        btn.className = 'px-2.5 py-1.5 rounded-xl bg-amber-500 text-slate-950 font-bold text-xs transition flex items-center gap-1 shadow';
+      } else {
+        btn.className = 'px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-semibold text-slate-300 transition flex items-center gap-1';
+      }
+      applyTransformStyles();
+    }
+
+    // ==========================================
+    // H. PELL DE CEBA, PAMPALLUGA (TAB) I QUADRÍCULA
+    // ==========================================
+    function toggleOnionSkin() {
+      onionEnabled = !onionEnabled;
+      const btn = document.getElementById('btn-onion');
+      if (onionEnabled) {
+        btn.className = 'text-xs font-bold flex items-center gap-1 text-purple-400 hover:text-purple-300 transition';
+      } else {
+        btn.className = 'text-xs font-bold flex items-center gap-1 text-slate-500 hover:text-slate-400 transition';
+      }
+      refreshOnionSkinOverlay();
+    }
+
+    function updateOnionOpacity(val) {
+      onionOpacity = parseInt(val, 10) / 100;
+      document.getElementById('onion-val').textContent = `${val}%`;
+      if (!blinkIntervalId) onionImg.style.opacity = onionOpacity;
+    }
+
+    function refreshOnionSkinOverlay() {
+      if (blinkIntervalId) return;
+      if (!onionEnabled || frames.length === 0 || isPlaying || isInspectingFrame || isMagicEraserActive) {
+        onionImg.classList.add('hidden');
+        return;
+      }
+      const lastFrame = frames[frames.length - 1];
+      onionImg.src = lastFrame.fullUrl;
+      onionImg.style.opacity = onionOpacity;
+      onionImg.classList.remove('hidden');
+    }
+
+    function toggleBlinkMode() {
+      if (frames.length === 0) {
+        showToast('Captureu almenys 1 foto per comparar amb Pampalluga!', true);
+        return;
+      }
+      if (isPlaying || isInspectingFrame || isMagicEraserActive) returnToLiveMode();
+
+      const btn = document.getElementById('btn-blink');
+      if (blinkIntervalId) {
+        stopBlinkMode();
+      } else {
+        const lastFrame = frames[frames.length - 1];
+        onionImg.src = lastFrame.fullUrl;
+        onionImg.classList.remove('hidden');
+        blinkStateShowingLast = true;
+        onionImg.style.opacity = 1.0;
+
+        btn.className = 'px-2.5 py-1.5 rounded-xl bg-amber-500 text-slate-950 font-bold text-xs transition flex items-center gap-1 shadow';
+        setStageModeBadge('PAMPALLUGA: FOTO ANTERIOR ⇄ VIU', 'amber');
+
+        blinkIntervalId = setInterval(() => {
+          blinkStateShowingLast = !blinkStateShowingLast;
+          onionImg.style.opacity = blinkStateShowingLast ? 1.0 : 0.0;
+        }, 320);
+      }
+    }
+
+    function stopBlinkMode() {
+      if (blinkIntervalId) {
+        clearInterval(blinkIntervalId);
+        blinkIntervalId = null;
+      }
+      const btn = document.getElementById('btn-blink');
+      btn.className = 'px-2.5 py-1.5 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-xs font-semibold text-amber-300 transition flex items-center gap-1';
+      setStageModeBadge('CÀMERA EN VIU', 'emerald');
+      refreshOnionSkinOverlay();
+    }
+
+    function toggleGrid() {
+      gridEnabled = !gridEnabled;
+      const grid = document.getElementById('grid-overlay');
+      const btn = document.getElementById('btn-grid');
+      if (gridEnabled) {
+        grid.classList.remove('hidden');
+        btn.className = 'px-2.5 py-1.5 rounded-xl bg-amber-500 text-slate-950 font-bold text-xs transition flex items-center gap-1';
+      } else {
+        grid.classList.add('hidden');
+        btn.className = 'px-2.5 py-1.5 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-xs font-semibold text-slate-300 transition flex items-center gap-1';
+      }
+    }
+
+    // ==========================================
+    // I. CAPTURA DE FOTOGRAMES A 1080P I PAUSA (HOLD)
+    // ==========================================
+    async function triggerCapture() {
+      if (blinkIntervalId) stopBlinkMode();
+      if (isPlaying || isInspectingFrame || isMagicEraserActive) {
+        returnToLiveMode();
+      }
+
+      playShutterSound();
+      const flashEl = document.getElementById('shutter-flash');
+      flashEl.classList.remove('animate-flash');
+      void flashEl.offsetWidth;
+      flashEl.classList.add('animate-flash');
+
+      if (liveChromaEnabled) {
+        renderCompositeChromaToContext(offscreenCtx);
+      } else {
+        drawRawCameraToContext(offscreenCtx);
+      }
+
+      const fullBlob = await canvasToBlob(offscreenCanvas, 0.92);
+      const fullUrl = URL.createObjectURL(fullBlob);
+      const thumbUrl = generateThumbnailFromCanvas(offscreenCanvas);
+
+      const newFrame = {
+        id: 'fr_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+        fullBlob: fullBlob,
+        fullUrl: fullUrl,
+        thumbUrl: thumbUrl,
+        hold: 1,
+        isTitle: false,
+        timestamp: Date.now()
+      };
+
+      frames.push(newFrame);
+      selectedFrameIndex = frames.length - 1;
+      selectedIndices = new Set([selectedFrameIndex]);
+
+      if (usingDemoStage && !demoCharacter.dragging) {
+        demoCharacter.x = ((demoCharacter.x - 200 + 60) % 1450) + 200;
+        renderDemoStage();
+      }
+
+      updateTimelineUI(true);
+      refreshOnionSkinOverlay();
+      saveProjectToDB();
+    }
+
+    async function captureCushionFour() {
+      await triggerCapture();
+      if (frames.length > 0) {
+        frames[frames.length - 1].hold = 4;
+        updateTimelineUI(true);
+        saveProjectToDB();
+        showToast('Capturat coixí de 4 fotogrames (4x) en 1 sola targeta!');
+      }
+    }
+
+    function setSelectedFramesHold(holdValue) {
+      if (frames.length === 0) {
+        showToast('Captureu alguna foto abans de canviar-ne la pausa!', true);
+        return;
+      }
+      pushTimelineUndoSnapshot();
+      const holdInt = Math.max(1, parseInt(holdValue, 10) || 1);
+      const targets = getEffectiveSelectedIndices();
+      targets.forEach(idx => {
+        if (frames[idx]) frames[idx].hold = holdInt;
+      });
+      updateTimelineUI(false);
+      saveProjectToDB();
+      const secs = (holdInt / projectFPS).toFixed(1);
+      showToast(holdInt === 1
+        ? 'Durada restablerta a 1 fotograma normal'
+        : `Pausa aplicada (${holdInt}x = ${secs}s) a ${targets.length} targeta(es)!`);
+    }
+
+    // ==========================================
+    // J. GOMA MÀGICA / MASKING PER ESBORRAR MANS I SUPORTS
+    // ==========================================
+    async function captureReferenceBackground() {
+      if (usingDemoStage) {
+        renderDemoStage(true);
+        offscreenCtx.drawImage(demoCanvas, 0, 0, 1920, 1080);
+        renderDemoStage(false);
+      } else if (liveChromaEnabled) {
+        renderCompositeChromaToContext(offscreenCtx);
+      } else {
+        drawRawCameraToContext(offscreenCtx);
+      }
+
+      if (referenceBgUrl) URL.revokeObjectURL(referenceBgUrl);
+      referenceBgBlob = await canvasToBlob(offscreenCanvas, 0.92);
+      referenceBgUrl = URL.createObjectURL(referenceBgBlob);
+
+      document.getElementById('bg-ref-label').innerHTML = '🪄 Fons Net Capturat ✓';
+      saveProjectToDB();
+      showToast('Fons Net guardat! Ara ja pots esborrar mans o suports amb la Goma Màgica.');
+    }
+
+    async function openMagicEraserOnSelected() {
+      if (frames.length === 0) {
+        showToast('Captureu almenys 1 fotografia abans d\'usar la Goma Màgica!', true);
+        return;
+      }
+      if (isPlaying) stopPlayback();
+      if (blinkIntervalId) stopBlinkMode();
+
+      const targetIdx = selectedFrameIndex >= 0 ? selectedFrameIndex : frames.length - 1;
+      selectedFrameIndex = targetIdx;
+      isInspectingFrame = true;
+      isMagicEraserActive = true;
+
+      if (!referenceBgUrl && usingDemoStage) {
+        await captureReferenceBackground();
+      }
+
+      const frameImg = await loadImageFromUrl(frames[targetIdx].fullUrl);
+      playbackCtx.clearRect(0, 0, 1920, 1080);
+      playbackCtx.drawImage(frameImg, 0, 0, 1920, 1080);
+      playbackCanvas.classList.remove('hidden');
+      onionImg.classList.add('hidden');
+
+      eraserUndoStack = [playbackCtx.getImageData(0, 0, 1920, 1080)];
+      await updateEraserSource();
+
+      document.getElementById('magic-eraser-toolbar').classList.remove('hidden');
+      document.getElementById('btn-return-live').classList.remove('hidden');
+      setStageModeBadge(`🪄 GOMA MÀGICA (TARGETA #${targetIdx + 1})`, 'amber');
+      playbackCanvas.style.cursor = 'none';
+    }
+
+    async function updateEraserSource() {
+      const sourceType = document.getElementById('eraser-source-select').value;
+      let sourceUrl = null;
+
+      if (sourceType === 'ref' && referenceBgUrl) {
+        sourceUrl = referenceBgUrl;
+      } else if (sourceType === 'prev' && selectedFrameIndex > 0) {
+        sourceUrl = frames[selectedFrameIndex - 1].fullUrl;
+      } else if (frames.length > 0) {
+        sourceUrl = frames[0].fullUrl;
+      }
+
+      if (sourceUrl) {
+        eraserReferenceImage = await loadImageFromUrl(sourceUrl);
+      }
+    }
+
+    function updateEraserBrushSize(val) {
+      eraserBrushSize = parseInt(val, 10);
+      document.getElementById('eraser-size-label').textContent = `${eraserBrushSize}px`;
+    }
+
+    function paintEraserAt(stageX, stageY) {
+      if (!eraserReferenceImage) return;
+      playbackCtx.save();
+      playbackCtx.beginPath();
+      playbackCtx.arc(stageX, stageY, eraserBrushSize, 0, Math.PI * 2);
+      playbackCtx.clip();
+      playbackCtx.drawImage(eraserReferenceImage, 0, 0, 1920, 1080);
+      playbackCtx.restore();
+    }
+
+    playbackCanvas.addEventListener('pointerdown', (e) => {
+      if (!isMagicEraserActive) return;
+      eraserDrawing = true;
+      eraserUndoStack.push(playbackCtx.getImageData(0, 0, 1920, 1080));
+      if (eraserUndoStack.length > 10) eraserUndoStack.shift();
+      const pos = getStagePointerPos(e, playbackCanvas);
+      paintEraserAt(pos.x, pos.y);
+    });
+
+    playbackCanvas.addEventListener('pointermove', (e) => {
+      if (!isMagicEraserActive) return;
+      const rect = playbackCanvas.getBoundingClientRect();
+      const screenDiameter = (eraserBrushSize * 2) * (rect.width / 1920);
+      eraserCursor.style.width = `${screenDiameter}px`;
+      eraserCursor.style.height = `${screenDiameter}px`;
+      eraserCursor.style.left = `${e.clientX}px`;
+      eraserCursor.style.top = `${e.clientY}px`;
+      eraserCursor.classList.remove('hidden');
+
+      if (eraserDrawing) {
+        const pos = getStagePointerPos(e, playbackCanvas);
+        paintEraserAt(pos.x, pos.y);
+      }
+    });
+
+    playbackCanvas.addEventListener('pointerleave', () => {
+      eraserCursor.classList.add('hidden');
+    });
+
+    window.addEventListener('pointerup', () => {
+      eraserDrawing = false;
+    });
+
+    function undoEraserStroke() {
+      if (eraserUndoStack.length > 0) {
+        const prevData = eraserUndoStack.pop();
+        playbackCtx.putImageData(prevData, 0, 0);
+      }
+    }
+
+    async function applyMagicEraserChanges() {
+      if (selectedFrameIndex < 0 || selectedFrameIndex >= frames.length) return;
+      const targetFrame = frames[selectedFrameIndex];
+      revokeFrameUrls(targetFrame);
+
+      const newBlob = await canvasToBlob(playbackCanvas, 0.92);
+      targetFrame.fullBlob = newBlob;
+      targetFrame.fullUrl = URL.createObjectURL(newBlob);
+      targetFrame.thumbUrl = generateThumbnailFromCanvas(playbackCanvas);
+
+      closeMagicEraser(false);
+      updateTimelineUI(false);
+      refreshOnionSkinOverlay();
+      saveProjectToDB();
+      showToast(`Targeta #${selectedFrameIndex + 1} actualitzada amb la Goma Màgica!`);
+    }
+
+    function closeMagicEraser(revert) {
+      isMagicEraserActive = false;
+      eraserDrawing = false;
+      eraserCursor.classList.add('hidden');
+      playbackCanvas.style.cursor = 'default';
+      document.getElementById('magic-eraser-toolbar').classList.add('hidden');
+      if (revert && selectedFrameIndex >= 0 && frames[selectedFrameIndex]) {
+        inspectFrame(selectedFrameIndex);
+      }
+    }
+
+    // ==========================================
+    // K. GENERADOR DE TARGETES DE TÍTOL I CRÈDITS EN 1 SOLA TARGETA
+    // ==========================================
+    function openTitleCardModal() {
+      document.getElementById('title-card-modal').classList.remove('hidden');
+      renderTitleCardPreview();
+    }
+
+    function closeTitleCardModal() {
+      document.getElementById('title-card-modal').classList.add('hidden');
+    }
+
+    function drawTitleCardToContext(ctx, mainText, subText, theme) {
+      ctx.save();
+      if (theme === 'cinema') {
+        const g = ctx.createRadialGradient(960, 540, 100, 960, 540, 1100);
+        g.addColorStop(0, '#1e293b');
+        g.addColorStop(1, '#020617');
+        ctx.fillStyle = g;
+        ctx.fillRect(0, 0, 1920, 1080);
+
+        ctx.strokeStyle = '#f59e0b';
+        ctx.lineWidth = 10;
+        ctx.strokeRect(70, 70, 1780, 940);
+        ctx.strokeStyle = 'rgba(245, 158, 11, 0.35)';
+        ctx.lineWidth = 3;
+        ctx.strokeRect(92, 92, 1736, 896);
+      } else if (theme === 'clay') {
+        ctx.fillStyle = '#ea580c';
+        ctx.fillRect(0, 0, 1920, 1080);
+        ctx.fillStyle = '#f59e0b';
+        for (let i = 0; i < 12; i++) {
+          ctx.beginPath();
+          ctx.arc((i * 230) % 1920, (i % 2 === 0) ? 110 : 970, 75, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      } else if (theme === 'space') {
+        ctx.fillStyle = '#090d16';
+        ctx.fillRect(0, 0, 1920, 1080);
+        for (let i = 0; i < 90; i++) {
+          ctx.fillStyle = '#fde047';
+          ctx.beginPath();
+          ctx.arc((i * 173) % 1920, (i * 263) % 1080, (i % 3) + 2, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      } else {
+        ctx.fillStyle = '#14532d';
+        ctx.fillRect(0, 0, 1920, 1080);
+        ctx.strokeStyle = '#78350f';
+        ctx.lineWidth = 38;
+        ctx.strokeRect(19, 19, 1882, 1042);
+      }
+
+      ctx.fillStyle = '#ffffff';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.font = 'bold 92px "Space Grotesk", sans-serif';
+      ctx.shadowColor = 'rgba(0,0,0,0.55)';
+      ctx.shadowBlur = 16;
+      ctx.fillText(mainText || 'TÍTOL DEL CURTMETRATGE', 960, 470, 1650);
+
+      ctx.fillStyle = theme === 'clay' ? '#fef3c7' : '#fbbf24';
+      ctx.font = '600 46px "Inter", sans-serif';
+      ctx.fillText(subText || '', 960, 610, 1550);
+      ctx.restore();
+    }
+
+    function renderTitleCardPreview() {
+      const previewCanvas = document.getElementById('title-preview-canvas');
+      const pCtx = previewCanvas.getContext('2d');
+      const mainText = document.getElementById('title-main-input').value;
+      const subText = document.getElementById('title-sub-input').value;
+      const theme = document.getElementById('title-theme-select').value;
+      drawTitleCardToContext(pCtx, mainText, subText, theme);
+    }
+
+    async function insertTitleCardFrames(position) {
+      const mainText = document.getElementById('title-main-input').value;
+      const subText = document.getElementById('title-sub-input').value;
+      const theme = document.getElementById('title-theme-select').value;
+      const durVal = document.getElementById('title-duration-select').value;
+
+      let holdFrames = 1;
+      if (durVal !== 'single') {
+        const seconds = parseInt(durVal, 10) || 2;
+        holdFrames = Math.max(1, seconds * projectFPS);
+      }
+
+      drawTitleCardToContext(offscreenCtx, mainText, subText, theme);
+      const cardBlob = await canvasToBlob(offscreenCanvas, 0.92);
+      const thumbUrl = generateThumbnailFromCanvas(offscreenCanvas);
+
+      const singleTitleCard = {
+        id: 'title_' + Date.now(),
+        fullBlob: cardBlob,
+        fullUrl: URL.createObjectURL(cardBlob),
+        thumbUrl: thumbUrl,
+        hold: holdFrames,
+        isTitle: true,
+        timestamp: Date.now()
+      };
+
+      if (position === 'start') {
+        frames.unshift(singleTitleCard);
+        selectedFrameIndex = 0;
+        selectedIndices = new Set([0]);
+      } else {
+        frames.push(singleTitleCard);
+        selectedFrameIndex = frames.length - 1;
+        selectedIndices = new Set([selectedFrameIndex]);
+      }
+
+      closeTitleCardModal();
+      updateTimelineUI(position === 'end');
+      refreshOnionSkinOverlay();
+      saveProjectToDB();
+      const secs = (holdFrames / projectFPS).toFixed(1);
+      showToast(`S'ha inserit 1 targeta de títol (${secs} s) a ${position === 'start' ? "l'inici" : 'al final'}!`);
+    }
+
+    // ==========================================
+    // L. AUTODISPARADOR / INTERVALÒMETRE AMB COMPTE ENRERE SONOR
+    // ==========================================
+    function setIntervalTimer(secStr) {
+      const sec = parseInt(secStr, 10) || 0;
+      intervalSeconds = sec;
+
+      if (intervalTimerId) {
+        clearInterval(intervalTimerId);
+        intervalTimerId = null;
+      }
+      document.getElementById('countdown-overlay').classList.add('hidden');
+
+      if (sec > 0) {
+        countdownValue = sec;
+        showToast(`Autodisparador activat: 1 foto cada ${sec} segons`);
+        intervalTimerId = setInterval(() => {
+          if (isPlaying || isInspectingFrame || isMagicEraserActive) return;
+          countdownValue--;
+          const overlay = document.getElementById('countdown-overlay');
+          const numEl = document.getElementById('countdown-number');
+
+          if (countdownValue > 0 && countdownValue <= 3) {
+            overlay.classList.remove('hidden');
+            numEl.textContent = countdownValue;
+            playCountdownBeep(false);
+          } else if (countdownValue <= 0) {
+            overlay.classList.add('hidden');
+            playCountdownBeep(true);
+            triggerCapture();
+            countdownValue = intervalSeconds;
+          }
+        }, 1000);
+      } else {
+        showToast('Disparador manual activat');
+      }
+    }
+
+    // ==========================================
+    // M. GESTIÓ DE LA LÍNIA DE TEMPS AMB SELECCIÓ MÚLTIPLE I DURADA (HOLD)
+    // ==========================================
+    function getEffectiveSelectedIndices() {
+      if (selectedIndices.size > 0) {
+        return Array.from(selectedIndices).filter(i => i >= 0 && i < frames.length).sort((a, b) => a - b);
+      }
+      if (selectedFrameIndex >= 0 && selectedFrameIndex < frames.length) {
+        return [selectedFrameIndex];
+      }
+      if (frames.length > 0) {
+        return [frames.length - 1];
+      }
+      return [];
+    }
+
+    function getTotalEffectiveFramesCount() {
+      return frames.reduce((sum, f) => sum + (f.hold || 1), 0);
+    }
+
+    function handleTimelineCardClick(event, idx) {
+      if (event.shiftKey && selectedFrameIndex >= 0) {
+        const start = Math.min(selectedFrameIndex, idx);
+        const end = Math.max(selectedFrameIndex, idx);
+        if (!event.ctrlKey && !event.metaKey) selectedIndices.clear();
+        for (let i = start; i <= end; i++) selectedIndices.add(i);
+        selectedFrameIndex = idx;
+      } else if (event.ctrlKey || event.metaKey) {
+        if (selectedIndices.has(idx)) {
+          selectedIndices.delete(idx);
+          if (selectedIndices.size > 0) {
+            selectedFrameIndex = Array.from(selectedIndices).pop();
+          }
+        } else {
+          selectedIndices.add(idx);
+          selectedFrameIndex = idx;
+        }
+      } else {
+        selectedIndices = new Set([idx]);
+        selectedFrameIndex = idx;
+      }
+      inspectFrame(idx, true);
+    }
+
+    function toggleFrameSelectionCheckbox(event, idx) {
+      event.stopPropagation();
+      if (selectedIndices.has(idx)) {
+        selectedIndices.delete(idx);
+      } else {
+        selectedIndices.add(idx);
+        selectedFrameIndex = idx;
+      }
+      updateTimelineUI(false);
+    }
+
+    function selectAllFrames() {
+      if (frames.length === 0) return;
+      selectedIndices = new Set(frames.map((_, idx) => idx));
+      if (selectedFrameIndex < 0) selectedFrameIndex = frames.length - 1;
+      updateTimelineUI(false);
+    }
+
+    function clearMultiSelection() {
+      selectedIndices.clear();
+      updateTimelineUI(false);
+    }
+
+    function updateTimelineUI(scrollToEnd = false) {
+      const strip = document.getElementById('timeline-strip');
+      strip.innerHTML = '';
+
+      const countBadge = document.getElementById('selection-count-badge');
+      const effectiveSel = getEffectiveSelectedIndices();
+      if (countBadge) {
+        countBadge.textContent = selectedIndices.size > 1
+          ? `${selectedIndices.size} targetes seleccionades`
+          : (frames.length > 0 ? `${effectiveSel.length} seleccionada` : '0 seleccionades');
+        countBadge.className = selectedIndices.size > 1
+          ? 'px-2 py-0.5 rounded bg-amber-500/20 border border-amber-400/50 font-mono text-amber-300 font-bold'
+          : 'px-2 py-0.5 rounded bg-slate-900 border border-slate-800 font-mono text-slate-300 font-semibold';
+      }
+
+      const holdSelect = document.getElementById('frame-hold-select');
+      if (holdSelect && effectiveSel.length > 0 && frames[effectiveSel[0]]) {
+        const currentHold = frames[effectiveSel[0]].hold || 1;
+        if ([1, 2, 4, 8, 16, 24].includes(currentHold)) {
+          holdSelect.value = String(currentHold);
+        }
+      }
+
+      if (frames.length === 0) {
+        strip.innerHTML = `
+          <div id="empty-timeline-msg" class="w-full py-4 text-center text-xs text-slate-500 flex items-center justify-center gap-2">
+            <span>📷 Encara no hi ha cap fotografia. Premeu <span class="kbd-badge">Espai</span> per capturar, o creeu una portada amb <strong>Títols</strong>!</span>
+          </div>`;
+        updateHUD();
+        return;
+      }
+
+      const fragment = document.createDocumentFragment();
+      frames.forEach((frame, idx) => {
+        const isChecked = selectedIndices.has(idx);
+        const isPrimary = idx === selectedFrameIndex;
+        const holdCount = frame.hold || 1;
+        const holdSec = (holdCount / projectFPS).toFixed(1);
+
+        const card = document.createElement('div');
+        card.id = `thumb-card-${idx}`;
+        card.onclick = (e) => handleTimelineCardClick(e, idx);
+        card.className = `relative group shrink-0 ${holdCount > 1 ? 'w-36' : 'w-28'} aspect-video rounded-lg overflow-hidden cursor-pointer border-2 transition-all ${
+          isChecked && selectedIndices.size > 1
+            ? 'border-amber-400 ring-2 ring-amber-400/60 scale-[1.03]'
+            : isPrimary
+            ? 'border-amber-400 ring-2 ring-amber-400/35 scale-[1.02]'
+            : 'border-slate-700 hover:border-slate-500 opacity-85 hover:opacity-100'
+        }`;
+
+        card.innerHTML = `
+          <img src="${frame.thumbUrl}" loading="lazy" alt="Foto ${idx + 1}" class="w-full h-full object-cover" />
+          <div class="absolute top-1 left-1 flex items-center gap-1">
+            <button type="button" onclick="toggleFrameSelectionCheckbox(event, ${idx})" class="w-4 h-4 rounded flex items-center justify-center border text-[10px] font-bold transition ${
+              isChecked
+                ? 'bg-amber-400 border-amber-300 text-slate-950'
+                : 'bg-slate-950/80 border-slate-500 text-transparent group-hover:border-amber-300'
+            }" title="Seleccionar per moure o esborrar en bloc">✓</button>
+            <span class="bg-slate-950/85 backdrop-blur px-1.5 py-0.5 rounded text-[10px] font-mono font-bold ${isPrimary || isChecked ? 'text-amber-400' : 'text-slate-200'}">
+              #${idx + 1}
+            </span>
+          </div>
+          ${holdCount > 1 ? `
+            <div class="absolute bottom-1 left-1 right-1 bg-indigo-950/90 border border-indigo-400/50 text-indigo-200 px-1.5 py-0.5 rounded text-[10px] font-mono font-bold flex items-center justify-between">
+              <span>⏱️ ${holdCount}x</span>
+              <span>${holdSec}s</span>
+            </div>
+          ` : ''}
+          <button onclick="event.stopPropagation(); deleteFrameAtIndex(${idx})" class="opacity-0 group-hover:opacity-100 absolute top-1 right-1 w-5 h-5 rounded bg-rose-600/90 hover:bg-rose-500 text-white text-[10px] font-bold flex items-center justify-center transition" title="Esborrar targeta #${idx + 1}">✕</button>
+        `;
+        fragment.appendChild(card);
+      });
+      strip.appendChild(fragment);
+
+      if (scrollToEnd) {
+        strip.scrollLeft = strip.scrollWidth;
+      } else if (selectedFrameIndex >= 0) {
+        const selectedEl = document.getElementById(`thumb-card-${selectedFrameIndex}`);
+        if (selectedEl) selectedEl.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
+      }
+
+      updateHUD();
+    }
+
+    function updateHUD() {
+      const totalCards = frames.length;
+      const totalEffectiveFrames = getTotalEffectiveFramesCount();
+      const durationSec = (totalEffectiveFrames / projectFPS).toFixed(1);
+      const currentDisplay = totalCards === 0 ? 0 : (isPlaying ? currentPlaybackIndex + 1 : selectedFrameIndex + 1);
+
+      document.getElementById('hud-frame-info').innerHTML = `Targeta: <strong class="text-amber-400">${currentDisplay} / ${totalCards}</strong>`;
+      document.getElementById('hud-time-info').innerHTML = `Durada: <strong class="text-emerald-400">${durationSec} s</strong> (${projectFPS} FPS)`;
+
+      // Actualitzar el mesurador de capacitat i MB estimats
+      const totalBytes = frames.reduce((acc, f) => acc + (f.fullBlob ? f.fullBlob.size : 250000), 0);
+      const totalMB = (totalBytes / (1024 * 1024)).toFixed(1);
+      const pct = Math.min(100, Math.round((totalCards / MAX_RECOMMENDED_FRAMES) * 100));
+      const maxMinApprox = Math.round((MAX_RECOMMENDED_FRAMES / projectFPS) / 60);
+
+      const topPill = document.getElementById('capacity-top-pill');
+      const gaugeText = document.getElementById('capacity-gauge-text');
+      const gaugeBar = document.getElementById('capacity-gauge-bar');
+
+      let colorClass = 'text-emerald-400';
+      let barColor = 'bg-emerald-500';
+      if (totalCards > 1200) {
+        colorClass = 'text-rose-400';
+        barColor = 'bg-rose-500';
+      } else if (totalCards > 800) {
+        colorClass = 'text-amber-400';
+        barColor = 'bg-amber-500';
+      }
+
+      if (topPill) {
+        topPill.textContent = `${totalCards}/${MAX_RECOMMENDED_FRAMES}`;
+        topPill.className = `font-mono text-[10px] bg-slate-950/80 px-1.5 py-0.2 rounded ${colorClass}`;
+      }
+      if (gaugeText) {
+        gaugeText.innerHTML = `Capacitat: <strong class="${colorClass}">${totalCards} / ${MAX_RECOMMENDED_FRAMES} fotos</strong> (~${totalMB} MB) · Màx recomanat: ~${maxMinApprox} min`;
+      }
+      if (gaugeBar) {
+        gaugeBar.style.width = `${pct}%`;
+        gaugeBar.className = `h-full ${barColor} rounded-full transition-all duration-300`;
+      }
+    }
+
+    async function inspectFrame(index, keepMultiSelection = false) {
+      if (index < 0 || index >= frames.length) return;
+      if (isPlaying) stopPlayback();
+      if (blinkIntervalId) stopBlinkMode();
+      if (isMagicEraserActive) closeMagicEraser(false);
+
+      selectedFrameIndex = index;
+      if (!keepMultiSelection) {
+        selectedIndices = new Set([index]);
+      }
+      isInspectingFrame = true;
+
+      const img = await loadImageFromUrl(frames[index].fullUrl);
+      playbackCtx.clearRect(0, 0, 1920, 1080);
+      playbackCtx.drawImage(img, 0, 0, 1920, 1080);
+      playbackCanvas.classList.remove('hidden');
+      onionImg.classList.add('hidden');
+
+      const holdInfo = (frames[index].hold || 1) > 1 ? ` · PAUSA ${frames[index].hold}x` : '';
+      setStageModeBadge(`INSPECCIONANT #${index + 1}${holdInfo}`, 'amber');
+      document.getElementById('btn-return-live').classList.remove('hidden');
+      updateTimelineUI(false);
+    }
+
+    function returnToLiveMode() {
+      if (isPlaying) stopPlayback();
+      if (blinkIntervalId) stopBlinkMode();
+      if (isMagicEraserActive) closeMagicEraser(false);
+
+      isInspectingFrame = false;
+      playbackCanvas.classList.add('hidden');
+      document.getElementById('btn-return-live').classList.add('hidden');
+      selectedFrameIndex = frames.length - 1;
+      selectedIndices = selectedFrameIndex >= 0 ? new Set([selectedFrameIndex]) : new Set();
+      setStageModeBadge('CÀMERA EN VIU', 'emerald');
+      refreshOnionSkinOverlay();
+      updateTimelineUI(false);
+    }
+
+    function setStageModeBadge(text, color) {
+      const pill = document.getElementById('mode-pill');
+      const dot = document.getElementById('mode-dot');
+      const label = document.getElementById('mode-text');
+      label.textContent = text;
+
+      if (color === 'emerald') {
+        pill.className = 'px-3 py-1 rounded-full bg-slate-900/90 border border-slate-700 backdrop-blur text-xs font-bold flex items-center gap-2 text-emerald-400 shadow';
+        dot.className = 'w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse';
+      } else if (color === 'amber') {
+        pill.className = 'px-3 py-1 rounded-full bg-slate-900/90 border border-amber-500/40 backdrop-blur text-xs font-bold flex items-center gap-2 text-amber-400 shadow';
+        dot.className = 'w-2.5 h-2.5 rounded-full bg-amber-400';
+      }
+    }
+
+    function deleteFrameAtIndex(index) {
+      if (index < 0 || index >= frames.length) return;
+      pushTimelineUndoSnapshot();
+      const removed = frames.splice(index, 1)[0];
+      revokeFrameUrls(removed);
+      selectedIndices.clear();
+
+      if (frames.length === 0) {
+        selectedFrameIndex = -1;
+        returnToLiveMode();
+      } else {
+        selectedFrameIndex = Math.min(index, frames.length - 1);
+        selectedIndices.add(selectedFrameIndex);
+        if (isInspectingFrame) {
+          inspectFrame(selectedFrameIndex, true);
+        } else {
+          refreshOnionSkinOverlay();
+        }
+      }
+      updateTimelineUI(false);
+      saveProjectToDB();
+    }
+
+    function deleteSelectedFrames() {
+      if (frames.length === 0) return;
+      const targets = getEffectiveSelectedIndices();
+      if (targets.length === 0) return;
+
+      pushTimelineUndoSnapshot();
+      for (let i = targets.length - 1; i >= 0; i--) {
+        const idx = targets[i];
+        const removed = frames.splice(idx, 1)[0];
+        revokeFrameUrls(removed);
+      }
+      selectedIndices.clear();
+
+      if (frames.length === 0) {
+        selectedFrameIndex = -1;
+        returnToLiveMode();
+      } else {
+        selectedFrameIndex = Math.min(targets[0], frames.length - 1);
+        selectedIndices.add(selectedFrameIndex);
+        if (isInspectingFrame) {
+          inspectFrame(selectedFrameIndex, true);
+        } else {
+          refreshOnionSkinOverlay();
+        }
+      }
+      updateTimelineUI(false);
+      saveProjectToDB();
+      showToast(targets.length > 1 ? `S'han eliminat ${targets.length} targetes (Ctrl+Z per desfer)` : 'Fotograma eliminat (Ctrl+Z per desfer)');
+    }
+
+    function duplicateSelectedFrames() {
+      if (frames.length === 0) return;
+      const targets = getEffectiveSelectedIndices();
+      if (targets.length === 0) return;
+
+      pushTimelineUndoSnapshot();
+      const insertPos = targets[targets.length - 1] + 1;
+      const copies = targets.map(idx => {
+        const src = frames[idx];
+        return {
+          id: 'fr_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+          fullBlob: src.fullBlob,
+          fullUrl: URL.createObjectURL(src.fullBlob),
+          thumbUrl: src.thumbUrl,
+          hold: src.hold || 1,
+          isTitle: !!src.isTitle,
+          timestamp: Date.now()
+        };
+      });
+
+      frames.splice(insertPos, 0, ...copies);
+      selectedIndices = new Set(copies.map((_, i) => insertPos + i));
+      selectedFrameIndex = insertPos + copies.length - 1;
+
+      updateTimelineUI(false);
+      saveProjectToDB();
+      showToast(copies.length > 1 ? `S'han duplicat ${copies.length} targetes` : 'Fotograma duplicat');
+    }
+
+    function reverseSelectedFrames() {
+      const targets = getEffectiveSelectedIndices();
+      if (targets.length < 2) {
+        showToast('Seleccioneu almenys 2 targetes (amb Maj+Clic o Ctrl+Clic) per invertir-ne l\'ordre!', true);
+        return;
+      }
+      pushTimelineUndoSnapshot();
+      const extracted = targets.map(i => frames[i]).reverse();
+      targets.forEach((frameIdx, idx) => {
+        frames[frameIdx] = extracted[idx];
+      });
+      updateTimelineUI(false);
+      refreshOnionSkinOverlay();
+      saveProjectToDB();
+      showToast(`⇄ S'ha invertit l'ordre de ${targets.length} targetes!`);
+    }
+
+    function moveSelectedFrames(direction) {
+      if (frames.length < 2) return;
+      const targets = getEffectiveSelectedIndices();
+      if (targets.length === 0) return;
+
+      if (direction === -1) {
+        if (targets[0] === 0) return;
+        pushTimelineUndoSnapshot();
+        targets.forEach(idx => {
+          const temp = frames[idx - 1];
+          frames[idx - 1] = frames[idx];
+          frames[idx] = temp;
+        });
+        selectedIndices = new Set(targets.map(i => i - 1));
+        selectedFrameIndex = Math.max(0, selectedFrameIndex - 1);
+      } else if (direction === 1) {
+        if (targets[targets.length - 1] === frames.length - 1) return;
+        pushTimelineUndoSnapshot();
+        for (let i = targets.length - 1; i >= 0; i--) {
+          const idx = targets[i];
+          const temp = frames[idx + 1];
+          frames[idx + 1] = frames[idx];
+          frames[idx] = temp;
+        }
+        selectedIndices = new Set(targets.map(i => i + 1));
+        selectedFrameIndex = Math.min(frames.length - 1, selectedFrameIndex + 1);
+      }
+
+      updateTimelineUI(false);
+      refreshOnionSkinOverlay();
+      saveProjectToDB();
+    }
+
+    function changeFPS(val) {
+      projectFPS = parseInt(val, 10);
+      updateTimelineUI(false);
+      saveProjectToDB();
+    }
+
+    // ==========================================
+    // O. EXPORTACIÓ A VÍDEO MP4 (H.264 HQ 20 Mbps / 8 Mbps), FOTOS .ZIP I PROJECTE PORTÀTIL
+    // ==========================================
+    async function exportVideoMP4() {
+      if (frames.length === 0) {
+        showToast('No hi ha cap fotografia per exportar!', true);
+        return;
+      }
+      if (isPlaying) stopPlayback();
+
+      const qualitySelect = document.getElementById('video-quality-select');
+      const selectedBitrate = qualitySelect ? parseInt(qualitySelect.value, 10) : 20000000;
+      const isHQ = selectedBitrate >= 16000000;
+
+      const modal = document.getElementById('export-modal');
+      const progressBar = document.getElementById('export-progress-bar');
+      const progressText = document.getElementById('export-progress-text');
+      modal.classList.remove('hidden');
+      progressBar.style.width = '0%';
+      progressText.textContent = '0%';
+
+      const mimeCandidates = [
+        'video/mp4;codecs=avc1.640028',
+        'video/mp4;codecs=avc1.42E01E',
+        'video/mp4;codecs=avc1',
+        'video/mp4',
+        'video/webm;codecs=h264',
+        'video/webm;codecs=vp9',
+        'video/webm'
+      ];
+      let chosenMime = 'video/webm';
+      for (const candidate of mimeCandidates) {
+        if (window.MediaRecorder && MediaRecorder.isTypeSupported(candidate)) {
+          chosenMime = candidate;
+          break;
+        }
+      }
+      const isMP4 = chosenMime.includes('mp4');
+      const fileExt = isMP4 ? 'mp4' : 'webm';
+
+      offscreenCtx.imageSmoothingEnabled = true;
+      offscreenCtx.imageSmoothingQuality = 'high';
+
+      const stream = offscreenCanvas.captureStream(projectFPS);
+      const recorder = new MediaRecorder(stream, {
+        mimeType: chosenMime,
+        videoBitsPerSecond: selectedBitrate
+      });
+
+      const chunks = [];
+      recorder.ondataavailable = (e) => {
+        if (e.data && e.data.size > 0) chunks.push(e.data);
+      };
+
+      recorder.onstop = () => {
+        const blob = new Blob(chunks, { type: chosenMime });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `curtmetratge_stopmotion_${projectFPS}fps_${isHQ ? 'HQ' : 'Std'}.${fileExt}`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        modal.classList.add('hidden');
+        showToast(`Vídeo exportat en ${isHQ ? 'Alta Qualitat (20 Mbps)' : 'Qualitat Estàndard (8 Mbps)'} (.${fileExt.toUpperCase()})!`);
+      };
+
+      recorder.start();
+
+      const frameDurationMs = 1000 / projectFPS;
+      const totalEffective = getTotalEffectiveFramesCount();
+      let renderedCount = 0;
+
+      for (let i = 0; i < frames.length; i++) {
+        const img = await loadImageFromUrl(frames[i].fullUrl);
+        const holdTicks = frames[i].hold || 1;
+
+        for (let h = 0; h < holdTicks; h++) {
+          offscreenCtx.fillStyle = '#000000';
+          offscreenCtx.fillRect(0, 0, 1920, 1080);
+          offscreenCtx.drawImage(img, 0, 0, 1920, 1080);
+
+          renderedCount++;
+          const pct = Math.round((renderedCount / totalEffective) * 100);
+          progressBar.style.width = `${pct}%`;
+          progressText.textContent = `${pct}% (${renderedCount}/${totalEffective} fotogrames)`;
+
+          await new Promise(r => setTimeout(r, frameDurationMs));
+        }
+      }
+
+      await new Promise(r => setTimeout(r, 200));
+      recorder.stop();
+    }
+
+    function crc32(buf) {
+      let table = window._crcTable;
+      if (!table) {
+        table = window._crcTable = new Uint32Array(256);
+        for (let i = 0; i < 256; i++) {
+          let c = i;
+          for (let k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+          table[i] = c;
+        }
+      }
+      let crc = 0 ^ (-1);
+      for (let i = 0; i < buf.length; i++) {
+        crc = (crc >>> 8) ^ table[(crc ^ buf[i]) & 0xFF];
+      }
+      return (crc ^ (-1)) >>> 0;
+    }
+
+    function buildZipBlobFromEntries(files) {
+      const localHeaders = [];
+      const centralHeaders = [];
+      let offset = 0;
+      const encoder = new TextEncoder();
+
+      files.forEach(file => {
+        const nameBytes = encoder.encode(file.name);
+        const crc = crc32(file.data);
+        const size = file.data.length;
+
+        const localHeader = new Uint8Array(30 + nameBytes.length);
+        const lv = new DataView(localHeader.buffer);
+        lv.setUint32(0, 0x04034b50, true);
+        lv.setUint16(4, 20, true);
+        lv.setUint16(6, 0, true);
+        lv.setUint16(8, 0, true);
+        lv.setUint16(10, 0, true);
+        lv.setUint16(12, 0, true);
+        lv.setUint32(14, crc, true);
+        lv.setUint32(18, size, true);
+        lv.setUint32(22, size, true);
+        lv.setUint16(26, nameBytes.length, true);
+        lv.setUint16(28, 0, true);
+        localHeader.set(nameBytes, 30);
+
+        localHeaders.push(localHeader, file.data);
+
+        const centralHeader = new Uint8Array(46 + nameBytes.length);
+        const cv = new DataView(centralHeader.buffer);
+        cv.setUint32(0, 0x02014b50, true);
+        cv.setUint16(4, 20, true);
+        cv.setUint16(6, 20, true);
+        cv.setUint16(8, 0, true);
+        cv.setUint16(10, 0, true);
+        cv.setUint16(12, 0, true);
+        cv.setUint16(14, 0, true);
+        cv.setUint32(16, crc, true);
+        cv.setUint32(20, size, true);
+        cv.setUint32(24, size, true);
+        cv.setUint16(28, nameBytes.length, true);
+        cv.setUint16(30, 0, true);
+        cv.setUint16(32, 0, true);
+        cv.setUint16(34, 0, true);
+        cv.setUint16(36, 0, true);
+        cv.setUint32(38, 0, true);
+        cv.setUint32(42, offset, true);
+        centralHeader.set(nameBytes, 46);
+
+        centralHeaders.push(centralHeader);
+        offset += localHeader.length + size;
+      });
+
+      const centralSize = centralHeaders.reduce((acc, b) => acc + b.length, 0);
+      const eocd = new Uint8Array(22);
+      const ev = new DataView(eocd.buffer);
+      ev.setUint32(0, 0x06054b50, true);
+      ev.setUint16(4, 0, true);
+      ev.setUint16(6, 0, true);
+      ev.setUint16(8, files.length, true);
+      ev.setUint16(10, files.length, true);
+      ev.setUint32(12, centralSize, true);
+      ev.setUint32(16, offset, true);
+      ev.setUint16(20, 0, true);
+
+      return new Blob([...localHeaders, ...centralHeaders, eocd], { type: 'application/zip' });
+    }
+
+    async function exportFramesZIP() {
+      if (frames.length === 0) {
+        showToast('No hi ha cap fotografia per descarregar!', true);
+        return;
+      }
+
+      showToast('Preparant l\'arxiu .ZIP amb totes les fotos numerades a 1080p...');
+      const files = [];
+      let seqNumber = 1;
+      for (let idx = 0; idx < frames.length; idx++) {
+        const arrayBuf = await frames[idx].fullBlob.arrayBuffer();
+        const bytes = new Uint8Array(arrayBuf);
+        const holdTicks = frames[idx].hold || 1;
+        for (let h = 0; h < holdTicks; h++) {
+          const num = String(seqNumber).padStart(4, '0');
+          files.push({
+            name: `${num}.jpg`,
+            data: bytes
+          });
+          seqNumber++;
+        }
+      }
+
+      const zipBlob = buildZipBlobFromEntries(files);
+      const url = URL.createObjectURL(zipBlob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `fotogrames_stopmotion_${files.length}_fotos.zip`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      showToast(`S'han descarregat ${files.length} fotogrames numerats (.ZIP)!`);
+    }
+
+    async function exportProjectFile() {
+      if (frames.length === 0) {
+        showToast('No hi ha cap fotografia per desar al projecte!', true);
+        return;
+      }
+      showToast('Empaquetant el projecte portàtil...');
+      const encoder = new TextEncoder();
+      const files = [];
+      const manifest = {
+        version: '2.6',
+        fps: projectFPS,
+        hasRefBg: !!referenceBgBlob,
+        frames: []
+      };
+
+      for (let i = 0; i < frames.length; i++) {
+        const f = frames[i];
+        const fileName = `card_${String(i + 1).padStart(4, '0')}.jpg`;
+        const buf = await f.fullBlob.arrayBuffer();
+        files.push({ name: fileName, data: new Uint8Array(buf) });
+        manifest.frames.push({
+          file: fileName,
+          hold: f.hold || 1,
+          isTitle: !!f.isTitle,
+          timestamp: f.timestamp
+        });
+      }
+
+      if (referenceBgBlob) {
+        const refBuf = await referenceBgBlob.arrayBuffer();
+        files.push({ name: 'reference_bg.jpg', data: new Uint8Array(refBuf) });
+      }
+
+      files.push({
+        name: 'project.json',
+        data: encoder.encode(JSON.stringify(manifest, null, 2))
+      });
+
+      const zipBlob = buildZipBlobFromEntries(files);
+      const url = URL.createObjectURL(zipBlob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `projecte_stopmotion_${frames.length}_targetes.stopmotion.zip`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast('Projecte desat! El pots guardar al teu Drive o USB i obrir-lo en qualsevol PC.');
+    }
+
+    async function importProjectFile(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      try {
+        const buf = await file.arrayBuffer();
+        const bytes = new Uint8Array(buf);
+        const view = new DataView(buf);
+        const decoder = new TextDecoder();
+        const extracted = {};
+
+        let pos = 0;
+        while (pos + 30 <= bytes.length) {
+          const sig = view.getUint32(pos, true);
+          if (sig !== 0x04034b50) break;
+          const compSize = view.getUint32(pos + 18, true);
+          const nameLen = view.getUint16(pos + 26, true);
+          const extraLen = view.getUint16(pos + 28, true);
+          const name = decoder.decode(bytes.subarray(pos + 30, pos + 30 + nameLen));
+          const dataStart = pos + 30 + nameLen + extraLen;
+          extracted[name] = bytes.slice(dataStart, dataStart + compSize);
+          pos = dataStart + compSize;
+        }
+
+        if (!extracted['project.json']) {
+          showToast('Aquest fitxer .ZIP no és un projecte d\'Stop-Motion vàlid', true);
+          return;
+        }
+
+        const manifest = JSON.parse(decoder.decode(extracted['project.json']));
+        frames.forEach(f => revokeFrameUrls(f));
+        frames = [];
+
+        for (const item of manifest.frames) {
+          const imgBytes = extracted[item.file];
+          if (!imgBytes) continue;
+          const blob = new Blob([imgBytes], { type: 'image/jpeg' });
+          const fullUrl = URL.createObjectURL(blob);
+          const img = await loadImageFromUrl(fullUrl);
+          offscreenCtx.drawImage(img, 0, 0, 1920, 1080);
+          const thumbUrl = generateThumbnailFromCanvas(offscreenCanvas);
+
+          frames.push({
+            id: 'fr_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+            fullBlob: blob,
+            fullUrl: fullUrl,
+            thumbUrl: thumbUrl,
+            hold: item.hold || 1,
+            isTitle: !!item.isTitle,
+            timestamp: item.timestamp || Date.now()
+          });
+        }
+
+        if (manifest.hasRefBg && extracted['reference_bg.jpg']) {
+          if (referenceBgUrl) URL.revokeObjectURL(referenceBgUrl);
+          referenceBgBlob = new Blob([extracted['reference_bg.jpg']], { type: 'image/jpeg' });
+          referenceBgUrl = URL.createObjectURL(referenceBgBlob);
+          document.getElementById('bg-ref-label').innerHTML = '🪄 Fons Net Capturat ✓';
+        }
+
+        projectFPS = manifest.fps || 8;
+        document.getElementById('fps-select').value = String(projectFPS);
+        selectedFrameIndex = frames.length - 1;
+        selectedIndices = selectedFrameIndex >= 0 ? new Set([selectedFrameIndex]) : new Set();
+
+        returnToLiveMode();
+        updateTimelineUI(true);
+        saveProjectToDB();
+        showToast(`Projecte carregat amb èxit (${frames.length} targetes)!`);
+      } catch (err) {
+        showToast('Error en obrir el fitxer de projecte', true);
+      }
+      event.target.value = '';
+    }
+
+    // ==========================================
+    // P. MODALS, NOTIFICACIONS I DRECERES DE TECLAT
+    // ==========================================
+    function toggleStorageModal(show) {
+      const modal = document.getElementById('storage-info-modal');
+      if (show) modal.classList.remove('hidden');
+      else modal.classList.add('hidden');
+    }
+
+    function openConfirmClearModal() {
+      if (frames.length === 0) {
+        showToast('El projecte ja és buit');
+        return;
+      }
+      document.getElementById('confirm-clear-modal').classList.remove('hidden');
+    }
+
+    function closeConfirmClearModal() {
+      document.getElementById('confirm-clear-modal').classList.add('hidden');
+    }
+
+    function confirmClearAllFrames() {
+      if (isPlaying) stopPlayback();
+      pushTimelineUndoSnapshot();
+      frames.forEach(f => revokeFrameUrls(f));
+      frames = [];
+      selectedFrameIndex = -1;
+      selectedIndices.clear();
+      returnToLiveMode();
+      updateTimelineUI(false);
+      saveProjectToDB();
+      closeConfirmClearModal();
+      showToast('Projecte nou iniciat (Pots prémer Ctrl+Z si vols recuperar l\'anterior)');
+    }
+
+    function toggleHelpModal(show) {
+      const modal = document.getElementById('help-modal');
+      if (show) modal.classList.remove('hidden');
+      else modal.classList.add('hidden');
+    }
+
+    let toastTimeout = null;
+    function showToast(message, isWarning = false) {
+      const toast = document.getElementById('toast');
+      const icon = document.getElementById('toast-icon');
+      const text = document.getElementById('toast-text');
+      text.textContent = message;
+      icon.textContent = isWarning ? '⚠️' : '✓';
+      icon.className = isWarning ? 'text-amber-400 text-base' : 'text-emerald-400 text-base';
+      toast.classList.remove('hidden');
+      if (toastTimeout) clearTimeout(toastTimeout);
+      toastTimeout = setTimeout(() => {
+        toast.classList.add('hidden');
+      }, 3200);
+    }
+
+    window.addEventListener('keydown', (e) => {
+      if (['SELECT', 'INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) return;
+
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'z' || e.key === 'Z')) {
+        e.preventDefault();
+        if (isMagicEraserActive) undoEraserStroke();
+        else undoLastTimelineAction();
+        return;
+      }
+
+      if (e.code === 'Space') {
+        e.preventDefault();
+        triggerCapture();
+      } else if (e.code === 'Tab') {
+        e.preventDefault();
+        toggleBlinkMode();
+      } else if (e.code === 'Enter' || e.key === 'p' || e.key === 'P') {
+        e.preventDefault();
+        togglePlayback();
+      } else if (e.code === 'Delete' || e.code === 'Backspace') {
+        if (!isMagicEraserActive) {
+          e.preventDefault();
+          deleteSelectedFrames();
+        }
+      } else if (e.key === 'o' || e.key === 'O') {
+        e.preventDefault();
+        toggleOnionSkin();
+      } else if (e.key === 'g' || e.key === 'G') {
+        e.preventDefault();
+        toggleGrid();
+      } else if (e.code === 'ArrowLeft' && frames.length > 0 && !isMagicEraserActive) {
+        e.preventDefault();
+        const target = Math.max(0, (selectedFrameIndex >= 0 ? selectedFrameIndex : frames.length - 1) - 1);
+        inspectFrame(target);
+      } else if (e.code === 'ArrowRight' && frames.length > 0 && !isMagicEraserActive) {
+        e.preventDefault();
+        const target = Math.min(frames.length - 1, (selectedFrameIndex >= 0 ? selectedFrameIndex : 0) + 1);
+        inspectFrame(target);
+      } else if (e.code === 'Escape') {
+        toggleHelpModal(false);
+        toggleStorageModal(false);
+        closeConfirmClearModal();
+        closeTitleCardModal();
+        if (blinkIntervalId) stopBlinkMode();
+        if (isMagicEraserActive) closeMagicEraser(true);
+        else if (isInspectingFrame || isPlaying) returnToLiveMode();
+      }
+    });
+
+    // ==========================================
+    // Q. INICIALITZACIÓ EN OBRIR LA PÀGINA
+    // ==========================================
+    window.onload = async function() {
+      await initIndexedDB();
+      const saved = await loadProjectFromDB();
+      if (saved) {
+        if (saved.referenceBgBlob) {
+          referenceBgBlob = saved.referenceBgBlob;
+          referenceBgUrl = URL.createObjectURL(referenceBgBlob);
+          document.getElementById('bg-ref-label').innerHTML = '🪄 Fons Net Capturat ✓';
+        }
+        if (Array.isArray(saved.frames) && saved.frames.length > 0) {
+          frames = saved.frames.map(f => ({
+            id: f.id,
+            fullBlob: f.fullBlob,
+            fullUrl: URL.createObjectURL(f.fullBlob),
+            thumbUrl: f.thumbUrl,
+            hold: f.hold || 1,
+            isTitle: !!f.isTitle,
+            timestamp: f.timestamp
+          }));
+          projectFPS = saved.fps || 8;
+          document.getElementById('fps-select').value = String(projectFPS);
+          selectedFrameIndex = frames.length - 1;
+          selectedIndices = new Set([selectedFrameIndex]);
+          updateTimelineUI(true);
+          showToast(`S'han recuperat ${frames.length} targetes de la sessió anterior!`);
+        }
+      }
+
+      await initCameraSystem();
+      refreshOnionSkinOverlay();
+    };
+  </script>
+</body>
+</html>
