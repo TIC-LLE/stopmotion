@@ -112,7 +112,11 @@
         <span>📂</span> <span>Obrir Projecte</span>
         <input type="file" id="import-project-input" accept=".zip" onchange="importProjectFile(event)" class="hidden">
       </label>
-      <div class="h-4 w-px bg-slate-800 mx-0.5"></div>
+      <label class="px-3 py-1.5 rounded-lg hover:bg-slate-800 text-amber-300 font-semibold text-xs transition flex items-center gap-1.5 cursor-pointer" title="Importar múltiples fotografies fetes amb càmera o mòbil">
+        <span>🖼️</span> <span>Importar Fotos</span>
+        <input type="file" id="import-photos-input" accept="image/*" multiple onchange="importExternalPhotos(event)" class="hidden">
+      </label>
+	  <div class="h-4 w-px bg-slate-800 mx-0.5"></div>
       <button onclick="openConfirmClearModal()" class="px-2.5 py-1.5 rounded-lg hover:bg-rose-950 text-slate-400 hover:text-rose-300 text-xs font-semibold transition flex items-center gap-1" title="Buidar i començar un projecte nou">
         <span>🗑️</span> <span class="hidden md:inline">Buidar</span>
       </button>
@@ -1739,30 +1743,6 @@
         blinkIntervalId = null;
       }
       const btn = document.getElementById('btn-blink');
-      btn.className = 'py-1.5 px-2 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-xs font-semibold text-amber-300 transition flex items-center justify-center gap-1';
-      setStageModeBadge('CÀMERA EN VIU', 'emerald');
-      refreshOnionSkinOverlay();
-    }
-
-    function toggleGrid() {
-      gridEnabled = !gridEnabled;
-      const grid = document.getElementById('grid-overlay');
-      const btn = document.getElementById('btn-grid');
-      if (gridEnabled) {
-        grid.classList.remove('hidden');
-        btn.className = 'py-1.5 px-2 rounded-xl bg-amber-500 text-slate-950 font-bold text-xs transition flex items-center justify-center gap-1';
-      } else {
-        grid.classList.add('hidden');
-        btn.className = 'py-1.5 px-2 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-xs font-semibold text-slate-300 transition flex items-center justify-center gap-1';
-      }
-    }
-
-    function stopBlinkMode() {
-      if (blinkIntervalId) {
-        clearInterval(blinkIntervalId);
-        blinkIntervalId = null;
-      }
-      const btn = document.getElementById('btn-blink');
       btn.className = 'px-2.5 py-1.5 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-xs font-semibold text-amber-300 transition flex items-center gap-1';
       setStageModeBadge('CÀMERA EN VIU', 'emerald');
       refreshOnionSkinOverlay();
@@ -1805,8 +1785,7 @@
       const fullBlob = await canvasToBlobWithCurrentPreset(offscreenCanvas);
       const fullUrl = URL.createObjectURL(fullBlob);
       const thumbUrl = generateThumbnailFromCanvas(offscreenCanvas);
-      const cachedImg = new Image();
-      cachedImg.src = fullUrl;
+
 
       const newFrame = {
         id: 'fr_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
@@ -2618,8 +2597,12 @@
       if (blinkIntervalId) stopBlinkMode();
       if (isMagicEraserActive) closeMagicEraser(false);
 
-      // Pre-carregar en memòria totes les imatges si alguna encara no està en caché
-      await Promise.all(frames.map(f => ensureFrameImageCached(f)));
+// Pre-carregar en bloc només si hi ha <= 120 fotos per no esgotar la RAM en projectes llargs
+      if (frames.length <= 120) {
+        await Promise.all(frames.map(f => ensureFrameImageCached(f)));
+      } else {
+        await Promise.all(frames.slice(0, 30).map(f => ensureFrameImageCached(f)));
+      }
 
       isPlaying = true;
       isInspectingFrame = false;
@@ -2641,13 +2624,25 @@
       playbackAnimationId = requestAnimationFrame(playbackLoop);
     }
 
-    function renderPlaybackFrameSync(idx) {
+function renderPlaybackFrameSync(idx) {
       if (idx < 0 || idx >= frames.length) return;
       const frame = frames[idx];
       if (frame && frame.cachedImg && frame.cachedImg.complete) {
         playbackCtx.fillStyle = '#000000';
         playbackCtx.fillRect(0, 0, 1920, 1080);
         playbackCtx.drawImage(frame.cachedImg, 0, 0, 1920, 1080);
+      } else if (frame) {
+        ensureFrameImageCached(frame).then(img => {
+          if (img && isPlaying && currentPlaybackIndex === idx) {
+            playbackCtx.drawImage(img, 0, 0, 1920, 1080);
+          }
+        });
+      }
+      // Si el projecte té més de 120 fotos, preparem les següents i alliberem les velles
+      if (frames.length > 120) {
+        ensureFrameImageCached(frames[(idx + 5) % frames.length]);
+        const oldIdx = (idx - 15 + frames.length) % frames.length;
+        if (frames[oldIdx]) frames[oldIdx].cachedImg = null;
       }
       highlightPlayingThumbnail(idx);
       updateHUD();
@@ -2713,9 +2708,13 @@
       }
       if (isPlaying) stopPlayback();
 
+      // 1. ALLIBERAR RAM ABANS D'EXPORTAR: Buidem les imatges en caché del reproductor
+      // per deixar tota la memòria lliure al codificador de vídeo (evita STATUS_BREAKPOINT)
+      frames.forEach(f => { f.cachedImg = null; });
+
       const qualitySelect = document.getElementById('video-quality-select');
-      const selectedBitrate = qualitySelect ? parseInt(qualitySelect.value, 10) : 20000000;
-      const isHQ = selectedBitrate >= 16000000;
+      const selectedBitrate = qualitySelect ? parseInt(qualitySelect.value, 10) : 12000000;
+      const isHQ = selectedBitrate >= 12000000;
 
       const modal = document.getElementById('export-modal');
       const progressBar = document.getElementById('export-progress-bar');
@@ -2724,12 +2723,13 @@
       progressBar.style.width = '0%';
       progressText.textContent = '0%';
 
+      // 2. Prioritzar perfils H.264 Baseline/Main (més estables en GPU Intel/Chromebook que High Profile)
       const mimeCandidates = [
-        'video/mp4;codecs=avc1.640028',
         'video/mp4;codecs=avc1.42E01E',
+        'video/mp4;codecs=avc1.4D401E',
         'video/mp4;codecs=avc1',
         'video/mp4',
-        'video/webm;codecs=h264',
+        'video/webm;codecs=vp8',
         'video/webm;codecs=vp9',
         'video/webm'
       ];
@@ -2746,11 +2746,17 @@
       offscreenCtx.imageSmoothingEnabled = true;
       offscreenCtx.imageSmoothingQuality = 'high';
 
+      // 3. captureStream() sense FPS continus o amb control manual per no saturar la cua de GPU
       const stream = offscreenCanvas.captureStream(projectFPS);
-      const recorder = new MediaRecorder(stream, {
-        mimeType: chosenMime,
-        videoBitsPerSecond: selectedBitrate
-      });
+      let recorder;
+      try {
+        recorder = new MediaRecorder(stream, {
+          mimeType: chosenMime,
+          videoBitsPerSecond: Math.min(selectedBitrate, 12000000) // Limitem a 12 Mbps màx per estabilitat
+        });
+      } catch (e) {
+        recorder = new MediaRecorder(stream);
+      }
 
       const chunks = [];
       recorder.ondataavailable = (e) => {
@@ -2758,6 +2764,9 @@
       };
 
       recorder.onstop = () => {
+        // Aturem les pistes del stream del canvas per alliberar el codificador de maquinari
+        stream.getTracks().forEach(t => t.stop());
+
         const blob = new Blob(chunks, { type: chosenMime });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -2766,26 +2775,36 @@
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
-        URL.revokeObjectURL(url);
+        setTimeout(() => URL.revokeObjectURL(url), 5000);
 
         modal.classList.add('hidden');
-        showToast(`Vídeo exportat en ${isHQ ? 'Alta Qualitat (20 Mbps)' : 'Qualitat Estàndard (8 Mbps)'} (.${fileExt.toUpperCase()})!`);
+        showToast(`Vídeo exportat correctament (.${fileExt.toUpperCase()})!`);
       };
 
-      recorder.start();
+      // 4. Cridar start(1000) amb timeslice de 1000ms perquè buidi el buffer intern cada segon
+      recorder.start(1000);
 
       const frameDurationMs = 1000 / projectFPS;
       const totalEffective = getTotalEffectiveFramesCount();
       let renderedCount = 0;
 
       for (let i = 0; i < frames.length; i++) {
-        const img = await loadImageFromUrl(frames[i].fullUrl);
+        const frameBlob = frames[i].fullBlob;
         const holdTicks = frames[i].hold || 1;
+
+        // 5. Usar createImageBitmap i tancar-lo (.close()) immediatament per no acumular res a la RAM
+        let bitmap = null;
+        let fallbackImg = null;
+        if (window.createImageBitmap && frameBlob) {
+          bitmap = await createImageBitmap(frameBlob);
+        } else {
+          fallbackImg = await loadImageFromUrl(frames[i].fullUrl);
+        }
 
         for (let h = 0; h < holdTicks; h++) {
           offscreenCtx.fillStyle = '#000000';
           offscreenCtx.fillRect(0, 0, 1920, 1080);
-          offscreenCtx.drawImage(img, 0, 0, 1920, 1080);
+          offscreenCtx.drawImage(bitmap || fallbackImg, 0, 0, 1920, 1080);
 
           renderedCount++;
           const pct = Math.round((renderedCount / totalEffective) * 100);
@@ -2794,9 +2813,13 @@
 
           await new Promise(r => setTimeout(r, frameDurationMs));
         }
+
+        // Alliberament immediat de la textura en memòria de vídeo!
+        if (bitmap) bitmap.close();
+        if (fallbackImg) fallbackImg.src = '';
       }
 
-      await new Promise(r => setTimeout(r, 200));
+      await new Promise(r => setTimeout(r, 250));
       recorder.stop();
     }
 
@@ -3057,6 +3080,85 @@
       event.target.value = '';
     }
 
+async function importExternalPhotos(event) {
+      const fileList = event.target.files;
+      if (!fileList || fileList.length === 0) return;
+
+      if (isPlaying) stopPlayback();
+
+      // Ordenar alfabèticament i numèricament pel nom del fitxer (ex: IMG_0001.JPG, IMG_0002.JPG...)
+      const files = Array.from(fileList).sort((a, b) =>
+        a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' })
+      );
+
+      pushTimelineUndoSnapshot();
+      showToast(`⏳ Processant i adaptant ${files.length} fotografies a 1080p...`);
+
+      let importedCount = 0;
+
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        if (!file.type.startsWith('image/')) continue;
+
+        const tempUrl = URL.createObjectURL(file);
+        try {
+          const img = await loadImageFromUrl(tempUrl);
+
+          // Netejar el llenç 1080p i centrar la foto mantenint la proporció (letterbox/pillarbox si és 4:3)
+          offscreenCtx.fillStyle = '#000000';
+          offscreenCtx.fillRect(0, 0, 1920, 1080);
+
+          const iw = img.naturalWidth || img.width || 1920;
+          const ih = img.naturalHeight || img.height || 1080;
+          const scale = Math.min(1920 / iw, 1080 / ih);
+          const drawW = iw * scale;
+          const drawH = ih * scale;
+          const offsetX = (1920 - drawW) / 2;
+          const offsetY = (1080 - drawH) / 2;
+
+          offscreenCtx.drawImage(img, offsetX, offsetY, drawW, drawH);
+
+          // Comprimir segons el preset actiu de l'estudi (JPG 92% per defecte) per no saturar IndexedDB
+          const fullBlob = await canvasToBlobWithCurrentPreset(offscreenCanvas);
+          const fullUrl = URL.createObjectURL(fullBlob);
+          const thumbUrl = generateThumbnailFromCanvas(offscreenCanvas);
+          const cachedImg = new Image();
+          cachedImg.src = fullUrl;
+
+frames.push({
+            id: 'fr_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6) + '_' + i,
+            fullBlob: fullBlob,
+            fullUrl: fullUrl,
+            cachedImg: null, // <-- Evita saturar la RAM en importar moltes fotos!
+            thumbUrl: thumbUrl,
+            hold: 1,
+            isTitle: false,
+            timestamp: Date.now()
+          });
+
+          importedCount++;
+        } catch (err) {
+          console.error('Error en importar la imatge:', file.name, err);
+        } finally {
+          URL.revokeObjectURL(tempUrl);
+        }
+      }
+
+      if (importedCount > 0) {
+        selectedFrameIndex = frames.length - 1;
+        selectedIndices = new Set([selectedFrameIndex]);
+        updateTimelineUI(true);
+        refreshOnionSkinOverlay();
+        saveProjectToDB();
+        showToast(`✅ S'han importat ${importedCount} fotografies a la línia de temps!`);
+      } else {
+        showToast('No s\'ha pogut importar cap imatge vàlida', true);
+      }
+
+      // Reiniciar l'input per permetre tornar a seleccionar la mateixa carpeta si cal
+      event.target.value = '';
+    }
+
     // ==========================================
     // P. MODALS, NOTIFICACIONS I DRECERES DE TECLAT
     // ==========================================
@@ -3180,15 +3282,13 @@
           document.getElementById('bg-ref-label').innerHTML = '🪄 Fons Net Capturat ✓';
         }
         if (Array.isArray(saved.frames) && saved.frames.length > 0) {
-          frames = saved.frames.map(f => {
+frames = saved.frames.map(f => {
             const url = URL.createObjectURL(f.fullBlob);
-            const cachedImg = new Image();
-            cachedImg.src = url;
             return {
               id: f.id,
               fullBlob: f.fullBlob,
               fullUrl: url,
-              cachedImg: cachedImg,
+              cachedImg: null, // <-- No sobrecarregar la RAM en obrir la pàgina!
               thumbUrl: f.thumbUrl,
               hold: f.hold || 1,
               isTitle: !!f.isTitle,
