@@ -1787,11 +1787,11 @@
       const thumbUrl = generateThumbnailFromCanvas(offscreenCanvas);
 
 
-      const newFrame = {
+const newFrame = {
         id: 'fr_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
         fullBlob: fullBlob,
         fullUrl: fullUrl,
-        cachedImg: cachedImg,
+        cachedImg: null,
         thumbUrl: thumbUrl,
         hold: 1,
         isTitle: false,
@@ -3122,8 +3122,6 @@ async function importExternalPhotos(event) {
           const fullBlob = await canvasToBlobWithCurrentPreset(offscreenCanvas);
           const fullUrl = URL.createObjectURL(fullBlob);
           const thumbUrl = generateThumbnailFromCanvas(offscreenCanvas);
-          const cachedImg = new Image();
-          cachedImg.src = fullUrl;
 
 frames.push({
             id: 'fr_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6) + '_' + i,
