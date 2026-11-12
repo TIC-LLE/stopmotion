@@ -553,6 +553,7 @@
             <select id="video-quality-select" class="w-full bg-slate-950 border border-slate-800 text-amber-300 text-xs font-bold px-2.5 py-1.5 rounded-xl focus:outline-none cursor-pointer">
               <option value="20000000" selected>Vídeo HQ · 20 Mbps (Nitidesa màx.)</option>
               <option value="8000000">Vídeo Estàndard · 8 Mbps (Lleuger)</option>
+              <option value="webm">Vídeo Compatible · WebM (si l'MP4 falla)</option>
             </select>
           </div>
 
@@ -2713,8 +2714,13 @@ function renderPlaybackFrameSync(idx) {
       frames.forEach(f => { f.cachedImg = null; });
 
       const qualitySelect = document.getElementById('video-quality-select');
-      const selectedBitrate = qualitySelect ? parseInt(qualitySelect.value, 10) : 12000000;
+      const wantWebm = !!(qualitySelect && qualitySelect.value === 'webm');
+      const selectedBitrate = (qualitySelect && !wantWebm) ? parseInt(qualitySelect.value, 10) : 8000000;
       const isHQ = selectedBitrate >= 12000000;
+
+      // Marca d'"exportació en curs": si Chrome peta (STATUS_BREAKPOINT), la marca queda desada
+      // i al tornar a obrir la web es canvia automàticament al mode compatible WebM.
+      try { localStorage.setItem('sm_export_pending', '1'); } catch (e) {}
 
       const modal = document.getElementById('export-modal');
       const progressBar = document.getElementById('export-progress-bar');
@@ -2724,15 +2730,18 @@ function renderPlaybackFrameSync(idx) {
       progressText.textContent = '0%';
 
       // 2. Prioritzar perfils H.264 Baseline/Main (més estables en GPU Intel/Chromebook que High Profile)
-      const mimeCandidates = [
-        'video/mp4;codecs=avc1.42E01E',
-        'video/mp4;codecs=avc1.4D401E',
-        'video/mp4;codecs=avc1',
-        'video/mp4',
+      const webmCandidates = [
         'video/webm;codecs=vp8',
         'video/webm;codecs=vp9',
         'video/webm'
       ];
+      const mp4Candidates = [
+        'video/mp4;codecs=avc1.42E01E',
+        'video/mp4;codecs=avc1.4D401E',
+        'video/mp4;codecs=avc1',
+        'video/mp4'
+      ];
+      const mimeCandidates = wantWebm ? webmCandidates : mp4Candidates.concat(webmCandidates);
       let chosenMime = 'video/webm';
       for (const candidate of mimeCandidates) {
         if (window.MediaRecorder && MediaRecorder.isTypeSupported(candidate)) {
@@ -2766,6 +2775,7 @@ function renderPlaybackFrameSync(idx) {
       recorder.onstop = () => {
         // Aturem les pistes del stream del canvas per alliberar el codificador de maquinari
         stream.getTracks().forEach(t => t.stop());
+        try { localStorage.removeItem('sm_export_pending'); } catch (e) {}
 
         const blob = new Blob(chunks, { type: chosenMime });
         const url = URL.createObjectURL(blob);
@@ -3301,6 +3311,23 @@ frames = saved.frames.map(f => {
           showToast(`S'han recuperat ${frames.length} targetes de la sessió anterior!`);
         }
       }
+
+      try {
+        const vSel = document.getElementById('video-quality-select');
+        if (vSel) {
+          const savedQ = localStorage.getItem('sm_video_quality');
+          if (savedQ) vSel.value = savedQ;
+          if (localStorage.getItem('sm_export_pending') === '1') {
+            localStorage.removeItem('sm_export_pending');
+            vSel.value = 'webm';
+            localStorage.setItem('sm_video_quality', 'webm');
+            showToast("L'última exportació MP4 ha fallat en aquest equip. S'ha activat el mode compatible WebM.", true);
+          }
+          vSel.addEventListener('change', () => {
+            try { localStorage.setItem('sm_video_quality', vSel.value); } catch (e) {}
+          });
+        }
+      } catch (e) {}
 
       await initCameraSystem();
       refreshOnionSkinOverlay();
