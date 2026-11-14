@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Estudi Stop-Motion d'Aula v3.2 · Disseny d'Estudi 1080p</title>
+  <title>Estudi Stop-Motion d'Aula v3.3 · Disseny d'Estudi 1080p</title>
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Google Fonts -->
@@ -69,6 +69,17 @@
       border-bottom-width: 2px;
       border-radius: 0.35rem;
     }
+    /* Estils per a Drag & Drop al Timeline */
+    .thumb-dragging {
+      opacity: 0.35 !important;
+      transform: scale(0.94) !important;
+    }
+    .drop-indicator-left {
+      box-shadow: -5px 0 0 0 #f59e0b, -8px 0 12px rgba(245, 158, 11, 0.7) !important;
+    }
+    .drop-indicator-right {
+      box-shadow: 5px 0 0 0 #f59e0b, 8px 0 12px rgba(245, 158, 11, 0.7) !important;
+    }
   </style>
 </head>
 <body class="h-screen w-screen flex flex-col justify-between bg-slate-950 text-slate-100 overflow-hidden">
@@ -92,7 +103,7 @@
       <div class="min-w-0">
         <div class="flex items-center gap-2">
           <h1 class="font-display font-bold text-base tracking-tight text-white truncate">
-            Estudi Stop-Motion <span class="text-amber-400">v3.2</span>
+            Estudi Stop-Motion <span class="text-amber-400">v3.3</span>
           </h1>
           <button onclick="toggleStorageModal(true)" id="db-status-badge" class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/30 transition cursor-pointer shrink-0" title="Clica per veure l'estat de la memòria i còpia de seguretat">
             <span>💾 Auto-desat</span>
@@ -116,7 +127,7 @@
         <span>🖼️</span> <span>Importar Fotos</span>
         <input type="file" id="import-photos-input" accept="image/*" multiple onchange="importExternalPhotos(event)" class="hidden">
       </label>
-	  <div class="h-4 w-px bg-slate-800 mx-0.5"></div>
+      <div class="h-4 w-px bg-slate-800 mx-0.5"></div>
       <button onclick="openConfirmClearModal()" class="px-2.5 py-1.5 rounded-lg hover:bg-rose-950 text-slate-400 hover:text-rose-300 text-xs font-semibold transition flex items-center gap-1" title="Buidar i començar un projecte nou">
         <span>🗑️</span> <span class="hidden md:inline">Buidar</span>
       </button>
@@ -210,7 +221,7 @@
           <!-- Slider Pell de Ceba -->
           <div class="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 space-y-1">
             <div class="flex justify-between text-[11px]">
-              <span class="text-slate-400">Opacitat fantasma:</span>
+              <span id="onion-ref-label" class="text-slate-400">Opacitat fantasma:</span>
               <span id="onion-val" class="font-mono text-purple-300 font-bold">45%</span>
             </div>
             <input type="range" id="onion-slider" min="0" max="90" value="45" oninput="updateOnionOpacity(this.value)" class="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-purple-500">
@@ -218,7 +229,7 @@
 
           <!-- Pampalluga i Quadrícula -->
           <div class="grid grid-cols-2 gap-1.5">
-            <button onclick="toggleBlinkMode()" id="btn-blink" class="py-1.5 px-2 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-xs font-semibold text-amber-300 transition flex items-center justify-center gap-1" title="Alternar entre última foto i càmera en viu (Tecla Tab)">
+            <button onclick="toggleBlinkMode()" id="btn-blink" class="py-1.5 px-2 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-xs font-semibold text-amber-300 transition flex items-center justify-center gap-1" title="Alternar entre la foto de referència i càmera en viu (Tecla Tab)">
               <span>👁️ Pampalluga</span>
             </button>
             <button onclick="toggleGrid()" id="btn-grid" class="py-1.5 px-2 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-xs font-semibold text-slate-300 transition flex items-center justify-center gap-1" title="Mostrar quadrícula de terços (Tecla G)">
@@ -259,7 +270,7 @@
 
           <div class="pt-1 border-t border-slate-800/80 flex items-center justify-between gap-2">
             <span class="text-[11px] text-slate-400">Coixí d'inici/final:</span>
-            <button onclick="captureCushionFour()" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-amber-300 font-bold text-xs transition flex items-center gap-1" title="Captura 1 foto amb pausa 4x (0.5 s) per començar o acabar l'escena suaument">
+            <button onclick="captureCushionFour()" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-amber-300 font-bold text-xs transition flex items-center gap-1" title="Captura 1 foto amb pausa 4x (0.5 s) en la posició d'inserció actual">
               <span>📸 +4 Coixí</span>
             </button>
           </div>
@@ -365,7 +376,7 @@
 
         <button onclick="triggerCapture()" id="btn-capture" class="px-7 py-2.5 rounded-2xl bg-rose-600 hover:bg-rose-500 active:scale-95 text-white font-display font-bold text-sm sm:text-base shadow-lg shadow-rose-600/30 border border-rose-400/40 transition flex items-center gap-2.5">
           <span class="w-3.5 h-3.5 rounded-full bg-white shadow"></span>
-          <span>CAPTURAR FOTO</span>
+          <span id="btn-capture-label">CAPTURAR FOTO</span>
           <span class="text-[11px] font-mono bg-rose-800/80 px-2 py-0.5 rounded text-rose-100">Espai</span>
         </button>
 
@@ -384,7 +395,7 @@
     <aside class="dock-scroll overflow-y-auto space-y-2.5 pl-0.5 flex flex-col justify-between">
       <div class="space-y-2.5">
 
-        <!-- Targeta 1: Eines Creatives d'Estudi (Títols, Croma i Goma Màgica integrats al Dock!) -->
+        <!-- Targeta 1: Eines Creatives d'Estudi -->
         <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-3 space-y-2.5 shadow-sm">
           <span class="text-[11px] font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
             <span>✨</span> Estudi Creatiu
@@ -406,7 +417,7 @@
             </button>
           </div>
 
-          <!-- SUB-PANELL INTEGRAT: GOMA MÀGICA (S'obre aquí mateix sense tapar el vídeo!) -->
+          <!-- SUB-PANELL INTEGRAT: GOMA MÀGICA -->
           <div id="magic-eraser-toolbar" class="hidden bg-purple-950/50 border border-purple-500/50 rounded-xl p-2.5 space-y-2.5 text-xs">
             <div class="flex items-center justify-between border-b border-purple-500/30 pb-1.5">
               <span class="font-display font-bold text-purple-200 text-xs flex items-center gap-1">
@@ -446,7 +457,7 @@
             </button>
           </div>
 
-          <!-- SUB-PANELL INTEGRAT: CROMA EN VIU (S'obre al Dock Dret sense tapar el vídeo!) -->
+          <!-- SUB-PANELL INTEGRAT: CROMA EN VIU -->
           <div id="chroma-panel" class="hidden bg-emerald-950/30 border border-emerald-500/40 rounded-xl p-2.5 space-y-2.5 text-xs">
             <div class="flex items-center justify-between border-b border-emerald-500/20 pb-1.5">
               <span class="font-display font-bold text-emerald-400 text-xs">🟩 Croma en Viu</span>
@@ -498,13 +509,13 @@
           </div>
         </div>
 
-        <!-- Targeta 2: Edició de Fotogrames Seleccionats -->
+        <!-- Targeta 2: Edició i Reordenació de Fotogrames Seleccionats -->
         <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-3 space-y-2.5 shadow-sm">
           <div class="flex items-center justify-between">
             <span class="text-[11px] font-bold uppercase tracking-wider text-indigo-400 flex items-center gap-1.5">
-              <span>🎞️</span> Edició de Fotograma
+              <span>🎞️</span> Edició i Ordre
             </span>
-            <button onclick="undoLastTimelineAction()" id="btn-undo-timeline" disabled class="px-2 py-0.5 rounded-md bg-slate-950 hover:bg-slate-800 disabled:opacity-35 text-emerald-300 border border-slate-800 text-[11px] font-bold transition" title="Desfer l'últim esborrat o canvi a la línia de temps (Ctrl+Z)">
+            <button onclick="undoLastTimelineAction()" id="btn-undo-timeline" disabled class="px-2 py-0.5 rounded-md bg-slate-950 hover:bg-slate-800 disabled:opacity-35 text-emerald-300 border border-slate-800 text-[11px] font-bold transition" title="Desfer l'últim canvi a la línia de temps (Ctrl+Z)">
               ↩ Desfés
             </button>
           </div>
@@ -522,22 +533,32 @@
             </select>
           </div>
 
-          <!-- Accions en bloc (Moure, Invertir, Duplicar, Esborrar) -->
-          <div class="grid grid-cols-5 gap-1 pt-0.5">
-            <button onclick="moveSelectedFrames(-1)" class="py-1.5 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-slate-200 text-xs font-bold transition" title="Moure cap a l'esquerra">
+          <!-- Accions de moviment i reordenació en bloc -->
+          <div class="grid grid-cols-4 gap-1 pt-0.5">
+            <button onclick="moveSelectedFramesToExtreme('start')" class="py-1.5 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-slate-300 text-[11px] font-bold transition" title="Moure la selecció a l'inici del tot">
+              ⏮ Inici
+            </button>
+            <button onclick="moveSelectedFrames(-1)" class="py-1.5 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-slate-200 text-xs font-bold transition" title="Moure 1 posició cap a l'esquerra">
               ◀
             </button>
-            <button onclick="moveSelectedFrames(1)" class="py-1.5 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-slate-200 text-xs font-bold transition" title="Moure cap a la dreta">
+            <button onclick="moveSelectedFrames(1)" class="py-1.5 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-slate-200 text-xs font-bold transition" title="Moure 1 posició cap a la dreta">
               ▶
             </button>
-            <button onclick="reverseSelectedFrames()" class="py-1.5 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-indigo-300 text-xs font-bold transition" title="Invertir l'ordre de les fotos seleccionades (efecte bumerang)">
-              ⇄
+            <button onclick="moveSelectedFramesToExtreme('end')" class="py-1.5 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-slate-300 text-[11px] font-bold transition" title="Moure la selecció al final del tot">
+              Final ⏭
             </button>
-            <button onclick="duplicateSelectedFrames()" class="py-1.5 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-amber-300 text-xs font-bold transition" title="Duplicar les targetes seleccionades">
-              x2
+          </div>
+
+          <!-- Accions d'edició (Invertir, Duplicar, Esborrar) -->
+          <div class="grid grid-cols-3 gap-1">
+            <button onclick="reverseSelectedFrames()" class="py-1.5 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-indigo-300 text-xs font-bold transition flex items-center justify-center gap-1" title="Invertir l'ordre de les fotos seleccionades (efecte bumerang)">
+              <span>⇄ Invertir</span>
             </button>
-            <button onclick="deleteSelectedFrames()" class="py-1.5 rounded-xl bg-slate-950 hover:bg-rose-950 border border-slate-800 text-rose-400 text-xs font-bold transition" title="Eliminar seleccionades (Tecla Supr)">
-              🗑️
+            <button onclick="duplicateSelectedFrames()" class="py-1.5 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-amber-300 text-xs font-bold transition flex items-center justify-center gap-1" title="Duplicar les targetes seleccionades just al costat">
+              <span>x2 Duplicar</span>
+            </button>
+            <button onclick="deleteSelectedFrames()" class="py-1.5 rounded-xl bg-slate-950 hover:bg-rose-950 border border-slate-800 text-rose-400 text-xs font-bold transition flex items-center justify-center gap-1" title="Eliminar seleccionades (Tecla Supr)">
+              <span>🗑️ Esborrar</span>
             </button>
           </div>
         </div>
@@ -573,27 +594,37 @@
   </div>
 
   <!-- ==========================================
-       3. TIRA INFERIOR DE FOTOGRAMES (TIMELINE D'AMPLADA COMPLETA)
+       3. TIRA INFERIOR DE FOTOGRAMES (TIMELINE D'AMPLADA COMPLETA + DRAG & DROP)
        ========================================== -->
   <section class="bg-slate-900 border-t border-slate-800 px-4 py-2 shrink-0 z-20">
     <div class="bg-slate-950 border border-slate-800 rounded-xl p-2 space-y-1">
       <div class="flex flex-wrap items-center justify-between gap-2 px-1 text-[11px] text-slate-400">
-        <div class="flex items-center gap-2">
+        
+        <div class="flex flex-wrap items-center gap-2">
           <span id="selection-count-badge" class="px-2 py-0.5 rounded bg-slate-900 border border-slate-800 font-mono text-slate-300 font-semibold">
             0 seleccionades
           </span>
           <button onclick="selectAllFrames()" class="hover:text-white underline decoration-slate-600 transition">Seleccionar tot</button>
           <span>·</span>
           <button onclick="clearMultiSelection()" class="hover:text-white underline decoration-slate-600 transition">Cap</button>
-          <span class="hidden md:inline text-slate-600">|</span>
-          <span class="hidden md:inline text-slate-500">Usa <kbd class="px-1 py-0.5 bg-slate-900 border border-slate-700 rounded text-[10px]">Ctrl+Clic</kbd> o <kbd class="px-1 py-0.5 bg-slate-900 border border-slate-700 rounded text-[10px]">Maj+Clic</kbd> per selecció múltiple</span>
+          
+          <span class="text-slate-700">|</span>
+
+          <!-- Selector de Mode d'Inserció (Al final vs Després de la seleccionada) -->
+          <button onclick="toggleInsertMode()" id="btn-insert-mode" class="px-2.5 py-0.5 rounded-md bg-slate-900 hover:bg-slate-800 border border-slate-700 text-emerald-300 font-semibold transition flex items-center gap-1" title="Clica per escollir on s'afegeixen les noves fotos capturades o importades">
+            <span id="insert-mode-text">➕ Inserir: Al final</span>
+          </button>
+
+          <span class="hidden xl:inline text-slate-700">|</span>
+          <span class="hidden xl:inline text-slate-400">✋ <strong>Arrossega qualsevol targeta</strong> per reordenar-la (o usa <kbd class="px-1 py-0.2 bg-slate-900 border border-slate-700 rounded text-[10px]">Ctrl+Clic</kbd> / <kbd class="px-1 py-0.2 bg-slate-900 border border-slate-700 rounded text-[10px]">Maj+Clic</kbd>)</span>
         </div>
-        <div class="text-[11px] text-slate-500 hidden sm:block">
+
+        <div class="text-[11px] text-slate-500 hidden md:block">
           Dreceres: <span class="kbd-badge">Espai</span> Capturar · <span class="kbd-badge">Enter</span> Play · <span class="kbd-badge">Tab</span> Pampalluga · <span class="kbd-badge">Ctrl+Z</span> Desfés
         </div>
       </div>
 
-      <div id="timeline-strip" class="timeline-scroll flex items-center gap-2 overflow-x-auto min-h-[78px] pb-1">
+      <div id="timeline-strip" class="timeline-scroll flex items-center gap-2 overflow-x-auto min-h-[78px] pb-1 px-1">
         <div id="empty-timeline-msg" class="w-full py-3.5 text-center text-xs text-slate-500 flex items-center justify-center gap-2">
           <span>📷 Encara no hi ha cap fotografia. Premeu <span class="kbd-badge">Espai</span> per capturar, o creeu una portada amb <strong>Títols</strong> al panell dret!</span>
         </div>
@@ -656,12 +687,15 @@
         <button onclick="closeTitleCardModal()" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-300">
           Cancel·lar
         </button>
-        <div class="flex items-center gap-2">
-          <button onclick="insertTitleCardFrames('start')" class="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow transition">
-            ⏮ Inserir a l'Inici (1 Targeta)
+        <div class="flex flex-wrap items-center gap-2">
+          <button onclick="insertTitleCardFrames('start')" class="px-3.5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow transition">
+            ⏮ A l'Inici
           </button>
-          <button onclick="insertTitleCardFrames('end')" class="px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow transition">
-            ⏭ Inserir al Final (1 Targeta)
+          <button onclick="insertTitleCardFrames('selected')" class="px-3.5 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs shadow transition" title="Insereix la targeta just després del fotograma seleccionat actualment">
+            📍 Després de Selecció
+          </button>
+          <button onclick="insertTitleCardFrames('end')" class="px-3.5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow transition">
+            ⏭ Al Final
           </button>
         </div>
       </div>
@@ -753,7 +787,7 @@
 
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
         <div class="bg-slate-950 p-2.5 rounded-xl border border-slate-800 flex items-center justify-between">
-          <span class="text-slate-300">Capturar fotografia</span>
+          <span class="text-slate-300">Capturar / Inserir foto</span>
           <span class="kbd-badge">Espai</span>
         </div>
         <div class="bg-slate-950 p-2.5 rounded-xl border border-slate-800 flex items-center justify-between">
@@ -773,9 +807,17 @@
           <span class="kbd-badge">O</span>
         </div>
         <div class="bg-slate-950 p-2.5 rounded-xl border border-slate-800 flex items-center justify-between">
-          <span class="text-slate-300">Mostrar Quadrícula</span>
-          <span class="kbd-badge">G</span>
+          <span class="text-slate-300">Desfer última acció</span>
+          <span class="kbd-badge">Ctrl + Z</span>
         </div>
+      </div>
+
+      <div class="bg-indigo-950/40 border border-indigo-500/30 rounded-xl p-3.5 text-xs text-indigo-200 space-y-1.5 leading-relaxed">
+        <div class="font-bold text-indigo-300">✋ Reordenar i inserir fotogrames al Timeline:</div>
+        <p>
+          • <strong>Arrossegar i deixar anar:</strong> Pots agafar qualsevol targeta (o grup de targetes seleccionades) i arrossegar-la amb el ratolí a una altra posició.<br>
+          • <strong>Inserir al mig:</strong> Clica el botó <em>"➕ Inserir: Al final"</em> perquè passi a <em>"📍 Inserir: Després de #X"</em>. Totes les noves fotos s'inseriran just darrere de la targeta seleccionada!
+        </p>
       </div>
 
       <div class="bg-purple-950/40 border border-purple-500/30 rounded-xl p-3.5 text-xs text-purple-200 space-y-1.5 leading-relaxed">
@@ -801,7 +843,7 @@
   <canvas id="chroma-bg-canvas" width="1920" height="1080" class="hidden"></canvas>
 
   <!-- ==========================================
-       5. MOTOR JAVASCRIPT DE L'APLICACIÓ (VERSIÓ 3.1 - GITHUB PAGES READY)
+       5. MOTOR JAVASCRIPT DE L'APLICACIÓ (VERSIÓ 3.3)
        ========================================== -->
   <script>
     // ESTAT GLOBAL DE L'ESTUDI I SELECTOR DE QUALITAT DE FOTO
@@ -817,6 +859,8 @@
     let referenceBgUrl = null;
     let selectedFrameIndex = -1;
     let selectedIndices = new Set();
+    let insertAfterSelected = false; // Nou v3.3: Permet inserir fotos just després de la targeta seleccionada
+    let draggedTimelineIndex = null; // Nou v3.3: Índex arrossegat durant Drag & Drop
     let projectFPS = 8;
     let isPlaying = false;
     let isInspectingFrame = false;
@@ -876,7 +920,7 @@
     const eraserCursor = document.getElementById('eraser-cursor');
 
     // ==========================================
-    // A. UTILITATS DE MEMÒRIA (BLOBS 1080P + IMATGES EN CACHÉ PER A PLAYBACK INSTANTANI)
+    // A. UTILITATS DE MEMÒRIA I SISTEMA DESFÉS (CTRL+Z)
     // ==========================================
     function getMaxRecommendedFrames() {
       const preset = PHOTO_QUALITY_PRESETS[currentPhotoQualityKey] || PHOTO_QUALITY_PRESETS.jpg92;
@@ -900,12 +944,6 @@
       });
     }
 
-    function canvasToBlob(canvasEl, quality = 0.92) {
-      return new Promise((resolve) => {
-        canvasEl.toBlob((blob) => resolve(blob), 'image/jpeg', quality);
-      });
-    }
-
     function generateThumbnailFromCanvas(sourceCanvas) {
       thumbCtx.clearRect(0, 0, 160, 90);
       thumbCtx.drawImage(sourceCanvas, 0, 0, 160, 90);
@@ -921,7 +959,6 @@
       });
     }
 
-    // Assegura que cada fotograma tingui el seu HTMLImageElement pre-descodificat en memòria per a un Play 100% síncron
     async function ensureFrameImageCached(frameObj) {
       if (!frameObj) return null;
       if (frameObj.cachedImg && frameObj.cachedImg.complete && frameObj.cachedImg.naturalWidth > 0) {
@@ -945,7 +982,6 @@
       }
     }
 
-    // Sistema Desfés (Ctrl+Z) per a la línia de temps (conserva Blobs en memòria)
     function pushTimelineUndoSnapshot() {
       const snapshot = frames.map(f => ({
         id: f.id,
@@ -956,7 +992,7 @@
         timestamp: f.timestamp
       }));
       timelineUndoStack.push(snapshot);
-      if (timelineUndoStack.length > 10) timelineUndoStack.shift();
+      if (timelineUndoStack.length > 15) timelineUndoStack.shift();
       updateUndoButtonState();
     }
 
@@ -975,15 +1011,14 @@
       const restored = timelineUndoStack.pop();
       frames = restored.map(f => {
         const url = URL.createObjectURL(f.fullBlob);
-        const img = new Image();
-        img.src = url;
         return {
           ...f,
           fullUrl: url,
-          cachedImg: img
+          cachedImg: null
         };
       });
-      selectedFrameIndex = frames.length - 1;
+      selectedFrameIndex = Math.min(selectedFrameIndex, frames.length - 1);
+      if (selectedFrameIndex < 0 && frames.length > 0) selectedFrameIndex = frames.length - 1;
       selectedIndices = selectedFrameIndex >= 0 ? new Set([selectedFrameIndex]) : new Set();
       updateUndoButtonState();
       updateTimelineUI(false);
@@ -1001,7 +1036,75 @@
     }
 
     // ==========================================
-    // B. SINTETITZADOR D'ÀUDIO (CLAC DE CÀMERA I BIPS)
+    // B. PUNT D'INSERCIÓ ACTIU I MODE D'INSERCIÓ
+    // ==========================================
+    function toggleInsertMode() {
+      insertAfterSelected = !insertAfterSelected;
+      updateInsertModeUI();
+      refreshOnionSkinOverlay();
+      if (insertAfterSelected) {
+        const refNum = getReferenceFrameIndex() + 1;
+        showToast(refNum > 0
+          ? `📍 Mode Inserció: Les noves fotos s'inseriran després de la targeta #${refNum}`
+          : '📍 Mode Inserció després de la selecció activat');
+      } else {
+        showToast('➕ Mode Inserció: Les noves fotos s\'afegiran al final del projecte');
+      }
+    }
+
+    function getReferenceFrameIndex() {
+      if (frames.length === 0) return -1;
+      if (insertAfterSelected && selectedFrameIndex >= 0 && selectedFrameIndex < frames.length) {
+        return selectedFrameIndex;
+      }
+      return frames.length - 1;
+    }
+
+    function getTargetInsertionIndex() {
+      if (frames.length === 0) return 0;
+      if (insertAfterSelected && selectedFrameIndex >= 0 && selectedFrameIndex < frames.length) {
+        return selectedFrameIndex + 1;
+      }
+      return frames.length;
+    }
+
+    function updateInsertModeUI() {
+      const btn = document.getElementById('btn-insert-mode');
+      const txt = document.getElementById('insert-mode-text');
+      const capLabel = document.getElementById('btn-capture-label');
+      const onionLabel = document.getElementById('onion-ref-label');
+
+      const isMidInsert = insertAfterSelected && frames.length > 0 && selectedFrameIndex >= 0 && selectedFrameIndex < frames.length - 1;
+      const refIdx = getReferenceFrameIndex();
+
+      if (insertAfterSelected) {
+        const posLabel = (selectedFrameIndex >= 0 && frames.length > 0) ? `#${selectedFrameIndex + 1}` : 'selecció';
+        if (txt) txt.textContent = `📍 Inserir: Després de ${posLabel}`;
+        if (btn) {
+          btn.className = 'px-2.5 py-0.5 rounded-md bg-amber-500/20 hover:bg-amber-500/30 border border-amber-400/50 text-amber-300 font-bold transition flex items-center gap-1';
+        }
+      } else {
+        if (txt) txt.textContent = '➕ Inserir: Al final';
+        if (btn) {
+          btn.className = 'px-2.5 py-0.5 rounded-md bg-slate-900 hover:bg-slate-800 border border-slate-700 text-emerald-300 font-semibold transition flex items-center gap-1';
+        }
+      }
+
+      if (capLabel) {
+        capLabel.textContent = isMidInsert
+          ? `INSERIR FOTO (#${selectedFrameIndex + 2})`
+          : 'CAPTURAR FOTO';
+      }
+
+      if (onionLabel) {
+        onionLabel.textContent = (refIdx >= 0 && frames.length > 0)
+          ? `Fantasma (Ref #${refIdx + 1}):`
+          : 'Opacitat fantasma:';
+      }
+    }
+
+    // ==========================================
+    // C. SINTETITZADOR D'ÀUDIO (CLAC DE CÀMERA I BIPS)
     // ==========================================
     let audioCtx = null;
     function getAudioContext() {
@@ -1051,7 +1154,7 @@
     }
 
     // ==========================================
-    // C. PERSISTÈNCIA AUTOMÀTICA AMB INDEXEDDB
+    // D. PERSISTÈNCIA AUTOMÀTICA AMB INDEXEDDB
     // ==========================================
     const DB_NAME = 'StopMotionAulaDB_v2';
     const DB_VERSION = 1;
@@ -1119,7 +1222,7 @@
     }
 
     // ==========================================
-    // D. GESTIÓ DE WEBCAM A 1080P I ESCENARI DE PROVA
+    // E. GESTIÓ DE WEBCAM A 1080P I ESCENARI DE PROVA
     // ==========================================
     async function initCameraSystem() {
       drawPresetChromaBackground('volcano');
@@ -1233,7 +1336,7 @@
     }
 
     // ==========================================
-    // E. ESCENARI DE PROVA INTERACTIU
+    // F. ESCENARI DE PROVA INTERACTIU
     // ==========================================
     let demoCharacter = { x: 600, y: 680, radius: 95, dragging: false };
     let demoCloud = { x: 1350, y: 250, dragging: false };
@@ -1260,7 +1363,7 @@
       if (demoGreenScreen) {
         btn.textContent = 'Treure Tela Verda';
         btn.className = 'ml-1 px-2 py-0.5 rounded bg-amber-500 text-slate-950 font-bold text-[11px] transition';
-        showToast('Tela verda activada! Obre "Croma en Viu" a dalt per substituir el fons.');
+        showToast('Tela verda activada! Obre "Croma" al panell dret per substituir el fons.');
       } else {
         btn.textContent = 'Posar Tela Verda de Prova';
         btn.className = 'ml-1 px-2 py-0.5 rounded bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[11px] transition';
@@ -1311,7 +1414,6 @@
 
       if (cleanBackgroundOnly) return;
 
-      // Vareta de suport per provar la Goma Màgica
       if (demoRigVisible) {
         demoCtx.save();
         demoCtx.strokeStyle = '#94a3b8';
@@ -1324,7 +1426,6 @@
         demoCtx.restore();
       }
 
-      // Ninot de plastilina taronja
       demoCtx.save();
       demoCtx.translate(demoCharacter.x, demoCharacter.y);
       demoCtx.fillStyle = 'rgba(0,0,0,0.3)';
@@ -1418,7 +1519,7 @@
     });
 
     // ==========================================
-    // F. MOTOR DE CROMA EN VIU AL VISOR
+    // G. MOTOR DE CROMA EN VIU AL VISOR
     // ==========================================
     function toggleChromaPanel() {
       const panel = document.getElementById('chroma-panel');
@@ -1433,7 +1534,7 @@
       if (liveChromaEnabled) {
         btn.textContent = 'ACTIVAT';
         btn.className = 'px-3 py-1 rounded-lg bg-emerald-500 text-slate-950 font-bold transition shadow';
-        topBtn.className = 'px-3 py-1.5 rounded-xl bg-emerald-500 text-slate-950 font-bold text-xs transition flex items-center gap-1.5 shadow';
+        topBtn.className = 'py-2 px-1.5 rounded-xl bg-emerald-500 text-slate-950 font-bold text-[11px] transition flex flex-col items-center gap-0.5 shadow';
         if (usingDemoStage && !demoGreenScreen) {
           toggleDemoGreenScreen();
         }
@@ -1442,7 +1543,7 @@
       } else {
         btn.textContent = 'DESACTIVAT';
         btn.className = 'px-3 py-1 rounded-lg bg-slate-800 text-slate-400 font-bold transition';
-        topBtn.className = 'px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-semibold text-emerald-400 transition flex items-center gap-1.5';
+        topBtn.className = 'py-2 px-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-[11px] font-bold text-emerald-400 transition flex flex-col items-center gap-0.5';
         if (chromaLoopId) cancelAnimationFrame(chromaLoopId);
         updateViewportSourceVisibility();
       }
@@ -1462,16 +1563,16 @@
     function activateChromaEyedropper() {
       chromaEyedropperActive = true;
       const btn = document.getElementById('btn-chroma-eyedropper');
-      btn.className = 'flex-1 py-1.5 px-2.5 rounded-xl bg-amber-500 text-slate-950 font-bold flex items-center justify-center gap-1.5 transition';
-      btn.innerHTML = '<span>🎯 Fes clic al fons verd...</span>';
+      btn.className = 'flex-1 py-1.5 px-2 rounded-lg bg-amber-500 text-slate-950 font-bold text-[11px] flex items-center justify-center gap-1 transition';
+      btn.innerHTML = '<span>🎯 Clica al fons verd...</span>';
       showToast('Fes clic sobre la tela verda del visor per calibrar el color');
     }
 
     function sampleChromaColorFromStage(e) {
       chromaEyedropperActive = false;
       const btn = document.getElementById('btn-chroma-eyedropper');
-      btn.className = 'flex-1 py-1.5 px-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 font-semibold text-slate-200 flex items-center justify-center gap-1.5 transition';
-      btn.innerHTML = '<span>💧 Tria color a la pantalla</span>';
+      btn.className = 'flex-1 py-1.5 px-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 font-semibold text-[11px] text-slate-200 flex items-center justify-center gap-1 transition';
+      btn.innerHTML = '<span>💧 Comptagotes a pantalla</span>';
 
       drawRawCameraToContext(offscreenCtx);
       const targetEl = e.currentTarget;
@@ -1640,7 +1741,7 @@
     }
 
     // ==========================================
-    // G. TRANSFORMACIONS D'IMATGE (GIRAR 180° I MIRALL)
+    // H. TRANSFORMACIONS D'IMATGE (GIRAR 180° I MIRALL)
     // ==========================================
     function applyTransformStyles() {
       let scaleX = mirrorHoriz ? -1 : 1;
@@ -1658,10 +1759,10 @@
       flip180 = !flip180;
       const btn = document.getElementById('btn-flip-180');
       if (flip180) {
-        btn.className = 'px-2.5 py-1.5 rounded-xl bg-amber-500 text-slate-950 font-bold text-xs transition flex items-center gap-1 shadow';
+        btn.className = 'py-1.5 px-2 rounded-xl bg-amber-500 text-slate-950 font-bold text-xs transition flex items-center justify-center gap-1 shadow';
         showToast('Imatge girada 180° (Pla Zenital activat)');
       } else {
-        btn.className = 'px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-semibold text-slate-300 transition flex items-center gap-1';
+        btn.className = 'py-1.5 px-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-semibold text-slate-300 transition flex items-center justify-center gap-1';
       }
       applyTransformStyles();
     }
@@ -1670,15 +1771,15 @@
       mirrorHoriz = !mirrorHoriz;
       const btn = document.getElementById('btn-mirror');
       if (mirrorHoriz) {
-        btn.className = 'px-2.5 py-1.5 rounded-xl bg-amber-500 text-slate-950 font-bold text-xs transition flex items-center gap-1 shadow';
+        btn.className = 'py-1.5 px-2 rounded-xl bg-amber-500 text-slate-950 font-bold text-xs transition flex items-center justify-center gap-1 shadow';
       } else {
-        btn.className = 'px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-semibold text-slate-300 transition flex items-center gap-1';
+        btn.className = 'py-1.5 px-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-semibold text-slate-300 transition flex items-center justify-center gap-1';
       }
       applyTransformStyles();
     }
 
     // ==========================================
-    // H. PELL DE CEBA, PAMPALLUGA (TAB) I QUADRÍCULA
+    // I. PELL DE CEBA, PAMPALLUGA (TAB) I QUADRÍCULA (AMB REFERÈNCIA DINÀMICA)
     // ==========================================
     function toggleOnionSkin() {
       onionEnabled = !onionEnabled;
@@ -1700,13 +1801,19 @@
     }
 
     function refreshOnionSkinOverlay() {
+      updateInsertModeUI();
       if (blinkIntervalId) return;
       if (!onionEnabled || frames.length === 0 || isPlaying || isInspectingFrame || isMagicEraserActive) {
         onionImg.classList.add('hidden');
         return;
       }
-      const lastFrame = frames[frames.length - 1];
-      onionImg.src = lastFrame.fullUrl;
+      const refIdx = getReferenceFrameIndex();
+      const refFrame = frames[refIdx];
+      if (!refFrame) {
+        onionImg.classList.add('hidden');
+        return;
+      }
+      onionImg.src = refFrame.fullUrl;
       onionImg.style.opacity = onionOpacity;
       onionImg.classList.remove('hidden');
     }
@@ -1716,20 +1823,21 @@
         showToast('Captureu almenys 1 foto per comparar amb Pampalluga!', true);
         return;
       }
-      if (isPlaying || isInspectingFrame || isMagicEraserActive) returnToLiveMode();
+      if (isPlaying || isInspectingFrame || isMagicEraserActive) returnToLiveMode(true);
 
       const btn = document.getElementById('btn-blink');
       if (blinkIntervalId) {
         stopBlinkMode();
       } else {
-        const lastFrame = frames[frames.length - 1];
-        onionImg.src = lastFrame.fullUrl;
+        const refIdx = getReferenceFrameIndex();
+        const refFrame = frames[refIdx];
+        onionImg.src = refFrame.fullUrl;
         onionImg.classList.remove('hidden');
         blinkStateShowingLast = true;
         onionImg.style.opacity = 1.0;
 
         btn.className = 'py-1.5 px-2 rounded-xl bg-amber-500 text-slate-950 font-bold text-xs transition flex items-center justify-center gap-1 shadow';
-        setStageModeBadge('PAMPALLUGA: FOTO ANTERIOR ⇄ VIU', 'amber');
+        setStageModeBadge(`PAMPALLUGA: FOTO #${refIdx + 1} ⇄ VIU`, 'amber');
 
         blinkIntervalId = setInterval(() => {
           blinkStateShowingLast = !blinkStateShowingLast;
@@ -1744,7 +1852,7 @@
         blinkIntervalId = null;
       }
       const btn = document.getElementById('btn-blink');
-      btn.className = 'px-2.5 py-1.5 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-xs font-semibold text-amber-300 transition flex items-center gap-1';
+      btn.className = 'py-1.5 px-2 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-xs font-semibold text-amber-300 transition flex items-center justify-center gap-1';
       setStageModeBadge('CÀMERA EN VIU', 'emerald');
       refreshOnionSkinOverlay();
     }
@@ -1755,22 +1863,24 @@
       const btn = document.getElementById('btn-grid');
       if (gridEnabled) {
         grid.classList.remove('hidden');
-        btn.className = 'px-2.5 py-1.5 rounded-xl bg-amber-500 text-slate-950 font-bold text-xs transition flex items-center gap-1';
+        btn.className = 'py-1.5 px-2 rounded-xl bg-amber-500 text-slate-950 font-bold text-xs transition flex items-center justify-center gap-1';
       } else {
         grid.classList.add('hidden');
-        btn.className = 'px-2.5 py-1.5 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-xs font-semibold text-slate-300 transition flex items-center gap-1';
+        btn.className = 'py-1.5 px-2 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-xs font-semibold text-slate-300 transition flex items-center justify-center gap-1';
       }
     }
 
     // ==========================================
-    // I. CAPTURA DE FOTOGRAMES A 1080P I PAUSA (HOLD)
+    // J. CAPTURA E INSERCIÓ DE FOTOGRAMES A 1080P I PAUSA (HOLD)
     // ==========================================
     async function triggerCapture() {
       if (blinkIntervalId) stopBlinkMode();
+      // Conservem la targeta seleccionada si estem en mode d'inserció posicional!
       if (isPlaying || isInspectingFrame || isMagicEraserActive) {
-        returnToLiveMode();
+        returnToLiveMode(true);
       }
 
+      pushTimelineUndoSnapshot();
       playShutterSound();
       const flashEl = document.getElementById('shutter-flash');
       flashEl.classList.remove('animate-flash');
@@ -1787,8 +1897,7 @@
       const fullUrl = URL.createObjectURL(fullBlob);
       const thumbUrl = generateThumbnailFromCanvas(offscreenCanvas);
 
-
-const newFrame = {
+      const newFrame = {
         id: 'fr_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
         fullBlob: fullBlob,
         fullUrl: fullUrl,
@@ -1799,8 +1908,11 @@ const newFrame = {
         timestamp: Date.now()
       };
 
-      frames.push(newFrame);
-      selectedFrameIndex = frames.length - 1;
+      const insertIdx = getTargetInsertionIndex();
+      const insertedInMiddle = insertIdx < frames.length;
+      frames.splice(insertIdx, 0, newFrame);
+
+      selectedFrameIndex = insertIdx;
       selectedIndices = new Set([selectedFrameIndex]);
 
       if (usingDemoStage && !demoCharacter.dragging) {
@@ -1808,18 +1920,22 @@ const newFrame = {
         renderDemoStage();
       }
 
-      updateTimelineUI(true);
+      updateTimelineUI(!insertedInMiddle);
       refreshOnionSkinOverlay();
       saveProjectToDB();
+
+      if (insertedInMiddle) {
+        showToast(`📍 Fotograma inserit a la posició #${insertIdx + 1}`);
+      }
     }
 
     async function captureCushionFour() {
       await triggerCapture();
-      if (frames.length > 0) {
-        frames[frames.length - 1].hold = 4;
-        updateTimelineUI(true);
+      if (selectedFrameIndex >= 0 && frames[selectedFrameIndex]) {
+        frames[selectedFrameIndex].hold = 4;
+        updateTimelineUI(false);
         saveProjectToDB();
-        showToast('Capturat coixí de 4 fotogrames (4x) en 1 sola targeta!');
+        showToast(`Capturat coixí (4x) a la targeta #${selectedFrameIndex + 1}!`);
       }
     }
 
@@ -1843,7 +1959,7 @@ const newFrame = {
     }
 
     // ==========================================
-    // J. GOMA MÀGICA / MASKING (BARRA EXTERNA SENSE SOLAPAR LA IMATGE)
+    // K. GOMA MÀGICA / MASKING
     // ==========================================
     async function captureReferenceBackground() {
       if (usingDemoStage) {
@@ -1892,7 +2008,6 @@ const newFrame = {
       eraserUndoStack = [eraserOriginalImageData];
       await updateEraserSource();
 
-      // Mostrar el sub-panell de la Goma Màgica al Dock Dret: el visor 16:9 queda 100% net!
       document.getElementById('magic-eraser-toolbar').classList.remove('hidden');
       document.getElementById('chroma-panel').classList.add('hidden');
       document.getElementById('demo-banner').classList.add('hidden');
@@ -1985,6 +2100,8 @@ const newFrame = {
 
     async function applyMagicEraserChanges() {
       if (selectedFrameIndex < 0 || selectedFrameIndex >= frames.length) return;
+      pushTimelineUndoSnapshot();
+
       const targetFrame = frames[selectedFrameIndex];
       revokeFrameUrls(targetFrame);
 
@@ -2017,12 +2134,12 @@ const newFrame = {
       if (revert && selectedFrameIndex >= 0 && frames[selectedFrameIndex]) {
         inspectFrame(selectedFrameIndex);
       } else if (!revert) {
-        returnToLiveMode();
+        returnToLiveMode(true);
       }
     }
 
     // ==========================================
-    // K. GENERADOR DE TARGETES DE TÍTOL I CRÈDITS EN 1 SOLA TARGETA
+    // L. GENERADOR DE TARGETES DE TÍTOL I CRÈDITS
     // ==========================================
     function openTitleCardModal() {
       document.getElementById('title-card-modal').classList.remove('hidden');
@@ -2128,10 +2245,18 @@ const newFrame = {
       };
 
       pushTimelineUndoSnapshot();
+      let posLabel = 'al final';
       if (position === 'start') {
         frames.unshift(singleTitleCard);
         selectedFrameIndex = 0;
         selectedIndices = new Set([0]);
+        posLabel = "a l'inici";
+      } else if (position === 'selected' && selectedFrameIndex >= 0 && selectedFrameIndex < frames.length) {
+        const targetIdx = selectedFrameIndex + 1;
+        frames.splice(targetIdx, 0, singleTitleCard);
+        selectedFrameIndex = targetIdx;
+        selectedIndices = new Set([targetIdx]);
+        posLabel = ` a la posició #${targetIdx + 1}`;
       } else {
         frames.push(singleTitleCard);
         selectedFrameIndex = frames.length - 1;
@@ -2143,11 +2268,11 @@ const newFrame = {
       refreshOnionSkinOverlay();
       saveProjectToDB();
       const secs = (holdFrames / projectFPS).toFixed(1);
-      showToast(`S'ha inserit 1 targeta de títol (${secs} s) a ${position === 'start' ? "l'inici" : 'al final'}!`);
+      showToast(`S'ha inserit 1 targeta de títol (${secs} s) ${posLabel}!`);
     }
 
     // ==========================================
-    // L. AUTODISPARADOR / INTERVALÒMETRE AMB COMPTE ENRERE SONOR
+    // M. AUTODISPARADOR / INTERVALÒMETRE
     // ==========================================
     function setIntervalTimer(secStr) {
       const sec = parseInt(secStr, 10) || 0;
@@ -2185,7 +2310,7 @@ const newFrame = {
     }
 
     // ==========================================
-    // M. GESTIÓ DE LA LÍNIA DE TEMPS AMB SELECCIÓ MÚLTIPLE I DURADA (HOLD)
+    // N. GESTIÓ DE LA LÍNIA DE TEMPS + DRAG & DROP EN BLOC
     // ==========================================
     function getEffectiveSelectedIndices() {
       if (selectedIndices.size > 0) {
@@ -2251,6 +2376,117 @@ const newFrame = {
       updateTimelineUI(false);
     }
 
+    // FUNCIONS DRAG & DROP DE TARGETES AL TIMELINE
+    function handleCardDragStart(e, idx) {
+      if (isPlaying) stopPlayback();
+      draggedTimelineIndex = idx;
+
+      // Si l'usuari arrossega una targeta que no estava marcada, la seleccionem sola;
+      // si ja formava part d'una selecció múltiple, arrosseguem tot el grup!
+      if (!selectedIndices.has(idx)) {
+        selectedIndices = new Set([idx]);
+        selectedFrameIndex = idx;
+      }
+
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', String(idx));
+
+      setTimeout(() => {
+        selectedIndices.forEach(sIdx => {
+          const el = document.getElementById(`thumb-card-${sIdx}`);
+          if (el) el.classList.add('thumb-dragging');
+        });
+      }, 0);
+    }
+
+    function handleCardDragOver(e, targetIdx) {
+      e.preventDefault();
+      if (draggedTimelineIndex === null) return;
+      e.dataTransfer.dropEffect = 'move';
+
+      const card = document.getElementById(`thumb-card-${targetIdx}`);
+      if (!card) return;
+
+      const rect = card.getBoundingClientRect();
+      const isAfter = (e.clientX - rect.left) > (rect.width / 2);
+
+      card.classList.remove('drop-indicator-left', 'drop-indicator-right');
+      card.classList.add(isAfter ? 'drop-indicator-right' : 'drop-indicator-left');
+    }
+
+    function handleCardDragLeave(e, targetIdx) {
+      const card = document.getElementById(`thumb-card-${targetIdx}`);
+      if (card) {
+        card.classList.remove('drop-indicator-left', 'drop-indicator-right');
+      }
+    }
+
+    function handleCardDrop(e, targetIdx) {
+      e.preventDefault();
+      e.stopPropagation();
+
+      const card = document.getElementById(`thumb-card-${targetIdx}`);
+      let insertAfter = false;
+      if (card) {
+        const rect = card.getBoundingClientRect();
+        insertAfter = (e.clientX - rect.left) > (rect.width / 2);
+        card.classList.remove('drop-indicator-left', 'drop-indicator-right');
+      }
+
+      if (draggedTimelineIndex === null) return;
+
+      const movingIndices = selectedIndices.has(draggedTimelineIndex)
+        ? Array.from(selectedIndices).sort((a, b) => a - b)
+        : [draggedTimelineIndex];
+
+      // Si deixem anar sobre la mateixa selecció, no fem res
+      if (movingIndices.includes(targetIdx)) {
+        draggedTimelineIndex = null;
+        updateTimelineUI(false);
+        return;
+      }
+
+      pushTimelineUndoSnapshot();
+
+      const movingFrames = movingIndices.map(i => frames[i]);
+      const movingSet = new Set(movingIndices);
+      const remainingFrames = frames.filter((_, i) => !movingSet.has(i));
+
+      const targetFrameObj = frames[targetIdx];
+      let newTargetPos = remainingFrames.indexOf(targetFrameObj);
+      if (newTargetPos === -1) {
+        newTargetPos = remainingFrames.length;
+      } else if (insertAfter) {
+        newTargetPos += 1;
+      }
+
+      remainingFrames.splice(newTargetPos, 0, ...movingFrames);
+      frames = remainingFrames;
+
+      selectedIndices = new Set(movingFrames.map((_, k) => newTargetPos + k));
+      selectedFrameIndex = newTargetPos + movingFrames.length - 1;
+      draggedTimelineIndex = null;
+
+      updateTimelineUI(false);
+      refreshOnionSkinOverlay();
+      saveProjectToDB();
+
+      if (isInspectingFrame) {
+        inspectFrame(selectedFrameIndex, true);
+      }
+
+      showToast(movingFrames.length > 1
+        ? `✋ S'han mogut ${movingFrames.length} targetes a la posició #${newTargetPos + 1}`
+        : `✋ Targeta moguda a la posició #${newTargetPos + 1}`);
+    }
+
+    function handleCardDragEnd() {
+      draggedTimelineIndex = null;
+      document.querySelectorAll('[id^="thumb-card-"]').forEach(el => {
+        el.classList.remove('thumb-dragging', 'drop-indicator-left', 'drop-indicator-right');
+      });
+    }
+
     function updateTimelineUI(scrollToEnd = false) {
       const strip = document.getElementById('timeline-strip');
       strip.innerHTML = '';
@@ -2274,6 +2510,8 @@ const newFrame = {
         }
       }
 
+      updateInsertModeUI();
+
       if (frames.length === 0) {
         strip.innerHTML = `
           <div id="empty-timeline-msg" class="w-full py-4 text-center text-xs text-slate-500 flex items-center justify-center gap-2">
@@ -2287,13 +2525,21 @@ const newFrame = {
       frames.forEach((frame, idx) => {
         const isChecked = selectedIndices.has(idx);
         const isPrimary = idx === selectedFrameIndex;
+        const isInsertAnchor = insertAfterSelected && isPrimary;
         const holdCount = frame.hold || 1;
         const holdSec = (holdCount / projectFPS).toFixed(1);
 
         const card = document.createElement('div');
         card.id = `thumb-card-${idx}`;
+        card.draggable = true;
         card.onclick = (e) => handleTimelineCardClick(e, idx);
-        card.className = `relative group shrink-0 ${holdCount > 1 ? 'w-36' : 'w-28'} aspect-video rounded-lg overflow-hidden cursor-pointer border-2 transition-all ${
+        card.ondragstart = (e) => handleCardDragStart(e, idx);
+        card.ondragover = (e) => handleCardDragOver(e, idx);
+        card.ondragleave = (e) => handleCardDragLeave(e, idx);
+        card.ondrop = (e) => handleCardDrop(e, idx);
+        card.ondragend = () => handleCardDragEnd();
+
+        card.className = `relative group shrink-0 ${holdCount > 1 ? 'w-36' : 'w-28'} aspect-video rounded-lg overflow-hidden cursor-grab active:cursor-grabbing border-2 transition-all ${
           isChecked && selectedIndices.size > 1
             ? 'border-amber-400 ring-2 ring-amber-400/60 scale-[1.03]'
             : isPrimary
@@ -2302,7 +2548,7 @@ const newFrame = {
         }`;
 
         card.innerHTML = `
-          <img src="${frame.thumbUrl}" loading="lazy" alt="Foto ${idx + 1}" class="w-full h-full object-cover" />
+          <img src="${frame.thumbUrl}" draggable="false" loading="lazy" alt="Foto ${idx + 1}" class="w-full h-full object-cover pointer-events-none" />
           <div class="absolute top-1 left-1 flex items-center gap-1">
             <button type="button" onclick="toggleFrameSelectionCheckbox(event, ${idx})" class="w-4 h-4 rounded flex items-center justify-center border text-[10px] font-bold transition ${
               isChecked
@@ -2313,8 +2559,13 @@ const newFrame = {
               #${idx + 1}
             </span>
           </div>
+          ${isInsertAnchor ? `
+            <div class="absolute bottom-1 right-1 bg-amber-500 text-slate-950 px-1 py-0.2 rounded text-[9px] font-mono font-bold shadow" title="Les noves fotos s'inseriran just darrere d'aquesta targeta">
+              ➕Aquí▶
+            </div>
+          ` : ''}
           ${holdCount > 1 ? `
-            <div class="absolute bottom-1 left-1 right-1 bg-indigo-950/90 border border-indigo-400/50 text-indigo-200 px-1.5 py-0.5 rounded text-[10px] font-mono font-bold flex items-center justify-between">
+            <div class="absolute bottom-1 left-1 ${isInsertAnchor ? 'right-12' : 'right-1'} bg-indigo-950/90 border border-indigo-400/50 text-indigo-200 px-1.5 py-0.5 rounded text-[10px] font-mono font-bold flex items-center justify-between">
               <span>⏱️ ${holdCount}x</span>
               <span>${holdSec}s</span>
             </div>
@@ -2344,7 +2595,6 @@ const newFrame = {
       document.getElementById('hud-frame-info').innerHTML = `Targeta: <strong class="text-amber-400">${currentDisplay} / ${totalCards}</strong>`;
       document.getElementById('hud-time-info').innerHTML = `Durada: <strong class="text-emerald-400">${durationSec} s</strong> (${projectFPS} FPS)`;
 
-      // Actualitzar el mesurador de capacitat i durada màxima segons la qualitat de foto seleccionada
       const preset = PHOTO_QUALITY_PRESETS[currentPhotoQualityKey] || PHOTO_QUALITY_PRESETS.jpg92;
       const maxRecommended = preset.maxFrames;
       const totalBytes = frames.reduce((acc, f) => acc + (f.fullBlob ? f.fullBlob.size : preset.avgBytes), 0);
@@ -2406,7 +2656,7 @@ const newFrame = {
       updateTimelineUI(false);
     }
 
-    function returnToLiveMode() {
+    function returnToLiveMode(keepSelection = false) {
       if (isPlaying) stopPlayback();
       if (blinkIntervalId) stopBlinkMode();
       if (isMagicEraserActive) closeMagicEraser(false);
@@ -2414,8 +2664,15 @@ const newFrame = {
       isInspectingFrame = false;
       playbackCanvas.classList.add('hidden');
       document.getElementById('btn-return-live').classList.add('hidden');
-      selectedFrameIndex = frames.length - 1;
-      selectedIndices = selectedFrameIndex >= 0 ? new Set([selectedFrameIndex]) : new Set();
+
+      if (!keepSelection && !insertAfterSelected) {
+        selectedFrameIndex = frames.length - 1;
+        selectedIndices = selectedFrameIndex >= 0 ? new Set([selectedFrameIndex]) : new Set();
+      } else if (selectedFrameIndex >= frames.length) {
+        selectedFrameIndex = frames.length - 1;
+        selectedIndices = selectedFrameIndex >= 0 ? new Set([selectedFrameIndex]) : new Set();
+      }
+
       setStageModeBadge('CÀMERA EN VIU', 'emerald');
       refreshOnionSkinOverlay();
       updateTimelineUI(false);
@@ -2499,13 +2756,11 @@ const newFrame = {
       const copies = targets.map(idx => {
         const src = frames[idx];
         const newUrl = URL.createObjectURL(src.fullBlob);
-        const cachedImg = new Image();
-        cachedImg.src = newUrl;
         return {
           id: 'fr_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
           fullBlob: src.fullBlob,
           fullUrl: newUrl,
-          cachedImg: cachedImg,
+          cachedImg: null,
           thumbUrl: src.thumbUrl,
           hold: src.hold || 1,
           isTitle: !!src.isTitle,
@@ -2518,6 +2773,7 @@ const newFrame = {
       selectedFrameIndex = insertPos + copies.length - 1;
 
       updateTimelineUI(false);
+      refreshOnionSkinOverlay();
       saveProjectToDB();
       showToast(copies.length > 1 ? `S'han duplicat ${copies.length} targetes` : 'Fotograma duplicat');
     }
@@ -2572,6 +2828,37 @@ const newFrame = {
       saveProjectToDB();
     }
 
+    function moveSelectedFramesToExtreme(where) {
+      if (frames.length < 2) return;
+      const targets = getEffectiveSelectedIndices();
+      if (targets.length === 0) return;
+
+      if (where === 'start' && targets[0] === 0 && targets[targets.length - 1] === targets.length - 1) return;
+      if (where === 'end' && targets[0] === frames.length - targets.length) return;
+
+      pushTimelineUndoSnapshot();
+      const movingSet = new Set(targets);
+      const movingFrames = targets.map(i => frames[i]);
+      const remainingFrames = frames.filter((_, i) => !movingSet.has(i));
+
+      if (where === 'start') {
+        frames = [...movingFrames, ...remainingFrames];
+        selectedIndices = new Set(movingFrames.map((_, idx) => idx));
+        selectedFrameIndex = 0;
+        showToast('⏮ Selecció moguda a l\'inici de la línia de temps');
+      } else {
+        const startPos = remainingFrames.length;
+        frames = [...remainingFrames, ...movingFrames];
+        selectedIndices = new Set(movingFrames.map((_, idx) => startPos + idx));
+        selectedFrameIndex = frames.length - 1;
+        showToast('⏭ Selecció moguda al final de la línia de temps');
+      }
+
+      updateTimelineUI(where === 'end');
+      refreshOnionSkinOverlay();
+      saveProjectToDB();
+    }
+
     function changeFPS(val) {
       projectFPS = parseInt(val, 10);
       updateTimelineUI(false);
@@ -2579,12 +2866,12 @@ const newFrame = {
     }
 
     // ==========================================
-    // N. MOTOR DE REPRODUCCIÓ (PLAY / PAUSA) 100% SÍNCRON I FLUID
+    // O. MOTOR DE REPRODUCCIÓ (PLAY / PAUSA)
     // ==========================================
     async function togglePlayback() {
       if (isPlaying) {
         stopPlayback();
-        returnToLiveMode();
+        returnToLiveMode(true);
       } else {
         await startPlayback();
       }
@@ -2598,7 +2885,6 @@ const newFrame = {
       if (blinkIntervalId) stopBlinkMode();
       if (isMagicEraserActive) closeMagicEraser(false);
 
-// Pre-carregar en bloc només si hi ha <= 120 fotos per no esgotar la RAM en projectes llargs
       if (frames.length <= 120) {
         await Promise.all(frames.map(f => ensureFrameImageCached(f)));
       } else {
@@ -2625,7 +2911,7 @@ const newFrame = {
       playbackAnimationId = requestAnimationFrame(playbackLoop);
     }
 
-function renderPlaybackFrameSync(idx) {
+    function renderPlaybackFrameSync(idx) {
       if (idx < 0 || idx >= frames.length) return;
       const frame = frames[idx];
       if (frame && frame.cachedImg && frame.cachedImg.complete) {
@@ -2639,7 +2925,6 @@ function renderPlaybackFrameSync(idx) {
           }
         });
       }
-      // Si el projecte té més de 120 fotos, preparem les següents i alliberem les velles
       if (frames.length > 120) {
         ensureFrameImageCached(frames[(idx + 5) % frames.length]);
         const oldIdx = (idx - 15 + frames.length) % frames.length;
@@ -2690,7 +2975,7 @@ function renderPlaybackFrameSync(idx) {
       }
       const playBtn = document.getElementById('btn-play');
       if (playBtn) {
-        playBtn.className = 'px-4 py-2 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-display font-bold text-sm sm:text-base shadow-lg shadow-emerald-600/20 transition flex items-center gap-2';
+        playBtn.className = 'px-5 py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-display font-bold text-sm sm:text-base shadow-lg shadow-emerald-600/20 transition flex items-center gap-2';
       }
       const playIcon = document.getElementById('play-icon');
       const playText = document.getElementById('play-text');
@@ -2700,7 +2985,7 @@ function renderPlaybackFrameSync(idx) {
     }
 
     // ==========================================
-    // O. EXPORTACIÓ A VÍDEO MP4 (H.264 HQ 20 Mbps / 8 Mbps), FOTOS .ZIP I PROJECTE PORTÀTIL
+    // P. EXPORTACIÓ A VÍDEO MP4, FOTOS .ZIP I PROJECTE PORTÀTIL
     // ==========================================
     async function exportVideoMP4() {
       if (frames.length === 0) {
@@ -2709,8 +2994,6 @@ function renderPlaybackFrameSync(idx) {
       }
       if (isPlaying) stopPlayback();
 
-      // 1. ALLIBERAR RAM ABANS D'EXPORTAR: Buidem les imatges en caché del reproductor
-      // per deixar tota la memòria lliure al codificador de vídeo (evita STATUS_BREAKPOINT)
       frames.forEach(f => { f.cachedImg = null; });
 
       const qualitySelect = document.getElementById('video-quality-select');
@@ -2718,8 +3001,6 @@ function renderPlaybackFrameSync(idx) {
       const selectedBitrate = (qualitySelect && !wantWebm) ? parseInt(qualitySelect.value, 10) : 8000000;
       const isHQ = selectedBitrate >= 12000000;
 
-      // Marca d'"exportació en curs": si Chrome peta (STATUS_BREAKPOINT), la marca queda desada
-      // i al tornar a obrir la web es canvia automàticament al mode compatible WebM.
       try { localStorage.setItem('sm_export_pending', '1'); } catch (e) {}
 
       const modal = document.getElementById('export-modal');
@@ -2729,7 +3010,6 @@ function renderPlaybackFrameSync(idx) {
       progressBar.style.width = '0%';
       progressText.textContent = '0%';
 
-      // 2. Prioritzar perfils H.264 Baseline/Main (més estables en GPU Intel/Chromebook que High Profile)
       const webmCandidates = [
         'video/webm;codecs=vp8',
         'video/webm;codecs=vp9',
@@ -2755,13 +3035,18 @@ function renderPlaybackFrameSync(idx) {
       offscreenCtx.imageSmoothingEnabled = true;
       offscreenCtx.imageSmoothingQuality = 'high';
 
-      // 3. captureStream() sense FPS continus o amb control manual per no saturar la cua de GPU
+      // Pre-pintar el fotograma #1 abans d'iniciar el MediaRecorder perquè no capturi cap fotograma residual!
+      const firstImg = await loadImageFromUrl(frames[0].fullUrl);
+      offscreenCtx.fillStyle = '#000000';
+      offscreenCtx.fillRect(0, 0, 1920, 1080);
+      offscreenCtx.drawImage(firstImg, 0, 0, 1920, 1080);
+
       const stream = offscreenCanvas.captureStream(projectFPS);
       let recorder;
       try {
         recorder = new MediaRecorder(stream, {
           mimeType: chosenMime,
-          videoBitsPerSecond: Math.min(selectedBitrate, 12000000) // Limitem a 12 Mbps màx per estabilitat
+          videoBitsPerSecond: Math.min(selectedBitrate, 12000000)
         });
       } catch (e) {
         recorder = new MediaRecorder(stream);
@@ -2773,7 +3058,6 @@ function renderPlaybackFrameSync(idx) {
       };
 
       recorder.onstop = () => {
-        // Aturem les pistes del stream del canvas per alliberar el codificador de maquinari
         stream.getTracks().forEach(t => t.stop());
         try { localStorage.removeItem('sm_export_pending'); } catch (e) {}
 
@@ -2791,7 +3075,6 @@ function renderPlaybackFrameSync(idx) {
         showToast(`Vídeo exportat correctament (.${fileExt.toUpperCase()})!`);
       };
 
-      // 4. Cridar start(1000) amb timeslice de 1000ms perquè buidi el buffer intern cada segon
       recorder.start(1000);
 
       const frameDurationMs = 1000 / projectFPS;
@@ -2802,7 +3085,6 @@ function renderPlaybackFrameSync(idx) {
         const frameBlob = frames[i].fullBlob;
         const holdTicks = frames[i].hold || 1;
 
-        // 5. Usar createImageBitmap i tancar-lo (.close()) immediatament per no acumular res a la RAM
         let bitmap = null;
         let fallbackImg = null;
         if (window.createImageBitmap && frameBlob) {
@@ -2824,7 +3106,6 @@ function renderPlaybackFrameSync(idx) {
           await new Promise(r => setTimeout(r, frameDurationMs));
         }
 
-        // Alliberament immediat de la textura en memòria de vídeo!
         if (bitmap) bitmap.close();
         if (fallbackImg) fallbackImg.src = '';
       }
@@ -2865,7 +3146,7 @@ function renderPlaybackFrameSync(idx) {
         const lv = new DataView(localHeader.buffer);
         lv.setUint32(0, 0x04034b50, true);
         lv.setUint16(4, 20, true);
-        lv.setUint16(6, 0, true);
+        lv.setUint16(6, 0x0800, true); // Bit 11 UTF-8 filename flag
         lv.setUint16(8, 0, true);
         lv.setUint16(10, 0, true);
         lv.setUint16(12, 0, true);
@@ -2883,7 +3164,7 @@ function renderPlaybackFrameSync(idx) {
         cv.setUint32(0, 0x02014b50, true);
         cv.setUint16(4, 20, true);
         cv.setUint16(6, 20, true);
-        cv.setUint16(8, 0, true);
+        cv.setUint16(8, 0x0800, true); // Bit 11 UTF-8
         cv.setUint16(10, 0, true);
         cv.setUint16(12, 0, true);
         cv.setUint16(14, 0, true);
@@ -2965,7 +3246,7 @@ function renderPlaybackFrameSync(idx) {
       const encoder = new TextEncoder();
       const files = [];
       const manifest = {
-        version: '3.1',
+        version: '3.3',
         fps: projectFPS,
         photoQuality: currentPhotoQualityKey,
         hasRefBg: !!referenceBgBlob,
@@ -3055,7 +3336,7 @@ function renderPlaybackFrameSync(idx) {
             id: 'fr_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
             fullBlob: blob,
             fullUrl: fullUrl,
-            cachedImg: img,
+            cachedImg: null,
             thumbUrl: thumbUrl,
             hold: item.hold || 1,
             isTitle: !!item.isTitle,
@@ -3090,13 +3371,12 @@ function renderPlaybackFrameSync(idx) {
       event.target.value = '';
     }
 
-async function importExternalPhotos(event) {
+    async function importExternalPhotos(event) {
       const fileList = event.target.files;
       if (!fileList || fileList.length === 0) return;
 
       if (isPlaying) stopPlayback();
 
-      // Ordenar alfabèticament i numèricament pel nom del fitxer (ex: IMG_0001.JPG, IMG_0002.JPG...)
       const files = Array.from(fileList).sort((a, b) =>
         a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' })
       );
@@ -3104,7 +3384,7 @@ async function importExternalPhotos(event) {
       pushTimelineUndoSnapshot();
       showToast(`⏳ Processant i adaptant ${files.length} fotografies a 1080p...`);
 
-      let importedCount = 0;
+      const newFramesBatch = [];
 
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
@@ -3114,7 +3394,6 @@ async function importExternalPhotos(event) {
         try {
           const img = await loadImageFromUrl(tempUrl);
 
-          // Netejar el llenç 1080p i centrar la foto mantenint la proporció (letterbox/pillarbox si és 4:3)
           offscreenCtx.fillStyle = '#000000';
           offscreenCtx.fillRect(0, 0, 1920, 1080);
 
@@ -3128,23 +3407,20 @@ async function importExternalPhotos(event) {
 
           offscreenCtx.drawImage(img, offsetX, offsetY, drawW, drawH);
 
-          // Comprimir segons el preset actiu de l'estudi (JPG 92% per defecte) per no saturar IndexedDB
           const fullBlob = await canvasToBlobWithCurrentPreset(offscreenCanvas);
           const fullUrl = URL.createObjectURL(fullBlob);
           const thumbUrl = generateThumbnailFromCanvas(offscreenCanvas);
 
-frames.push({
+          newFramesBatch.push({
             id: 'fr_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6) + '_' + i,
             fullBlob: fullBlob,
             fullUrl: fullUrl,
-            cachedImg: null, // <-- Evita saturar la RAM en importar moltes fotos!
+            cachedImg: null,
             thumbUrl: thumbUrl,
             hold: 1,
             isTitle: false,
             timestamp: Date.now()
           });
-
-          importedCount++;
         } catch (err) {
           console.error('Error en importar la imatge:', file.name, err);
         } finally {
@@ -3152,23 +3428,27 @@ frames.push({
         }
       }
 
-      if (importedCount > 0) {
-        selectedFrameIndex = frames.length - 1;
-        selectedIndices = new Set([selectedFrameIndex]);
-        updateTimelineUI(true);
+      if (newFramesBatch.length > 0) {
+        const insertPos = getTargetInsertionIndex();
+        const insertedInMiddle = insertPos < frames.length;
+        frames.splice(insertPos, 0, ...newFramesBatch);
+
+        selectedIndices = new Set(newFramesBatch.map((_, k) => insertPos + k));
+        selectedFrameIndex = insertPos + newFramesBatch.length - 1;
+
+        updateTimelineUI(!insertedInMiddle);
         refreshOnionSkinOverlay();
         saveProjectToDB();
-        showToast(`✅ S'han importat ${importedCount} fotografies a la línia de temps!`);
+        showToast(`✅ S'han importat ${newFramesBatch.length} fotografies a partir de la posició #${insertPos + 1}!`);
       } else {
         showToast('No s\'ha pogut importar cap imatge vàlida', true);
       }
 
-      // Reiniciar l'input per permetre tornar a seleccionar la mateixa carpeta si cal
       event.target.value = '';
     }
 
     // ==========================================
-    // P. MODALS, NOTIFICACIONS I DRECERES DE TECLAT
+    // Q. MODALS, NOTIFICACIONS I DRECERES DE TECLAT
     // ==========================================
     function toggleStorageModal(show) {
       const modal = document.getElementById('storage-info-modal');
@@ -3268,12 +3548,12 @@ frames.push({
         closeTitleCardModal();
         if (blinkIntervalId) stopBlinkMode();
         if (isMagicEraserActive) closeMagicEraser(true);
-        else if (isInspectingFrame || isPlaying) returnToLiveMode();
+        else if (isInspectingFrame || isPlaying) returnToLiveMode(true);
       }
     });
 
     // ==========================================
-    // Q. INICIALITZACIÓ EN OBRIR LA PÀGINA
+    // R. INICIALITZACIÓ EN OBRIR LA PÀGINA
     // ==========================================
     window.onload = async function() {
       await initIndexedDB();
@@ -3290,13 +3570,13 @@ frames.push({
           document.getElementById('bg-ref-label').innerHTML = '🪄 Fons Net Capturat ✓';
         }
         if (Array.isArray(saved.frames) && saved.frames.length > 0) {
-frames = saved.frames.map(f => {
+          frames = saved.frames.map(f => {
             const url = URL.createObjectURL(f.fullBlob);
             return {
               id: f.id,
               fullBlob: f.fullBlob,
               fullUrl: url,
-              cachedImg: null, // <-- No sobrecarregar la RAM en obrir la pàgina!
+              cachedImg: null,
               thumbUrl: f.thumbUrl,
               hold: f.hold || 1,
               isTitle: !!f.isTitle,
